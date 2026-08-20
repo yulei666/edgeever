@@ -582,7 +582,7 @@ export const zhCN = {
     unknown: "未知",
     copy: "复制信息",
     updateAvailableTitle: "发现新版本",
-    updateAvailableDescription: "已有新版本 {{version}}，可查看更新内容后升级。",
+    updateAvailableDescription: "<paragraph>新版本 <strong>v{{version}}</strong> 已发布。Cloudflare 和 Docker 实例默认每日自动更新。</paragraph><paragraph><strong>请勿使用 Sync fork</strong>，可能导致分支冲突。</paragraph><paragraph>如需手动更新：Cloudflare 用户可运行 <strong>Update deployed EdgeEver</strong> 工作流；Docker 用户可运行 <strong>~/edgeever/update.sh</strong>。</paragraph><paragraph><strong>桌面客户端</strong>新版本可前往 Releases 页面下载。</paragraph>",
     viewRelease: "查看更新",
     latestVersion: "当前已是最新版本",
     closeUpdateNotice: "关闭新版本提示",
