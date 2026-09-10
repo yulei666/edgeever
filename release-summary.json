@@ -1,15 +1,21 @@
 {
-  "version": "1.63.2",
+  "version": "1.64.0",
   "changes": {
     "en-US": [
-      "Fix GitHub marketplace plugin installs failing with Failed to fetch on desktop. The instance now resolves official releases and downloads plugin assets, so daily updates no longer need a client-side GitHub API round trip. Update both the instance and the desktop app.",
-      "Fix Docker/NAS upgrades that drop container environment variables, leaving login working while AI and object-storage credentials could no longer be encrypted and new model services could not be added. The encryption root is stored on the data volume and generated when missing; the add-service form no longer looks fillable while encryption is unavailable. If saved credentials cannot be decrypted, re-enter the API key.",
-      "Fix the AI settings pane crashing when provider names, base URLs, or tag-suggestion prompts are missing."
+      "Filter notes from a visible tag on Android and iOS. Desktop and mobile lists now match the exact tag, so similarly named tags no longer leak into the result.",
+      "Plugins can describe panel header actions, search, tabs, and empty states through the host UI, and setting lists open in a dialog.",
+      "Official plugin update checks no longer depend on GitHub REST quota and fall back when asset downloads fail. Official plugins skip the community trust dialog and no longer interrupt with an auto-update notice.",
+      "Large mind maps on phones open at a readable size, fill the remaining viewport, pinch-zoom, and focus a topic on tap.",
+      "Keep desktop pull working when the inbox was renamed or deleted. The instance restores a stable inbox identity; update both the instance and the desktop app.",
+      "Hold in-app auto-restart until the connected instance catches up with GitHub latest. Manual downloads are unchanged."
     ],
     "zh-CN": [
-      "修复桌面端从 GitHub 插件市场安装失败（Failed to fetch）的问题。实例会代为解析官方 Release 并下载插件，日常更新不再依赖客户端直接访问 GitHub。请同时更新实例和桌面端。",
-      "修复 Docker/NAS 升级丢掉容器环境变量后，登录仍可用但无法加密保存 AI 与对象存储凭据、也无法添加模型服务的问题。加密根密钥会写入数据卷，缺失时自动生成；加密仍不可用时“添加服务”不再呈现为可填写。若已保存的密钥无法解密，请重新填写 API Key。",
-      "修复 AI 设置在服务名称、接口地址或标签建议提示词缺失时崩溃的问题。"
+      "Android 和 iOS 可从可见标签筛选笔记；桌面端和移动端列表按精确标签匹配，相近名称的标签不再混入结果。",
+      "插件可通过宿主界面描述面板标题操作、搜索、标签页和空状态，设置项也会以对话框列表呈现。",
+      "官方插件更新检查不再依赖 GitHub REST 配额，下载失败会回退；官方插件不再弹出社区信任确认或自动更新打断提示。",
+      "手机端打开大型思维导图时不再缩成无法阅读的全图，画布铺满剩余视口，支持捏合缩放并点选主题。",
+      "修复桌面端在收件箱被改名或删除后无法拉取同步的问题。实例会恢复稳定的收件箱身份；请同时更新实例和桌面端。",
+      "桌面端在所连接实例尚未跟上 GitHub 最新版本时，会暂缓应用内自动重启，避免客户端比实例更新。手动下载不受影响。"
     ]
   }
 }

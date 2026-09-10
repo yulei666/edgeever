@@ -73,6 +73,8 @@ const isGithubUnreachableError = (error: unknown) => {
   return error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError");
 };
 
+const isGithubRateLimitedStatus = (status: number) => status === 403 || status === 429;
+
 const isMissingGithubAssetError = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   return /HTTP 404/i.test(message);
@@ -109,21 +111,50 @@ const readGithubApi = async (
   url: string,
   headers: Record<string, string>,
 ) => {
-  try {
-    return await request(url, {
-      cache: "no-store",
-      credentials: "omit",
-      headers,
-      signal: AbortSignal.timeout(GITHUB_API_TIMEOUT_MS),
-    });
-  } catch (error) {
-    if (!isGithubUnreachableError(error)) throw error;
+  const throughInstance = async () => {
     try {
       return await fetchGithubMetadataThroughInstance(url);
     } catch {
       throw new Error(GITHUB_UNREACHABLE_MESSAGE);
     }
+  };
+  try {
+    const response = await request(url, {
+      cache: "no-store",
+      credentials: "omit",
+      headers,
+      signal: AbortSignal.timeout(GITHUB_API_TIMEOUT_MS),
+    });
+    if (isGithubRateLimitedStatus(response.status) || response.status === 401) {
+      try {
+        return await throughInstance();
+      } catch {
+        return response;
+      }
+    }
+    return response;
+  } catch (error) {
+    if (!isGithubUnreachableError(error)) throw error;
+    return throughInstance();
   }
+};
+
+const readRawGithubManifest = async (
+  request: typeof fetch,
+  coordinates: GithubRepositoryCoordinates,
+) => {
+  for (const ref of ["HEAD", "main", "master"]) {
+    try {
+      const response = await request(
+        `https://raw.githubusercontent.com/${coordinates.owner}/${coordinates.repository}/${ref}/manifest.json`,
+        { cache: "no-store", credentials: "omit", signal: AbortSignal.timeout(GITHUB_API_TIMEOUT_MS) },
+      );
+      if (response.ok) return response;
+    } catch (error) {
+      if (!isGithubUnreachableError(error)) throw error;
+    }
+  }
+  return null;
 };
 
 const namedReleaseAsset = (name: string): GithubReleaseAsset => ({
@@ -163,16 +194,32 @@ export type GithubAssetDownloader = (
 ) => Promise<ArrayBuffer>;
 
 const downloadGithubAssetThroughApi: GithubAssetDownloader = async (coordinates, releaseTag, asset) => {
-  try {
+  const assetName = asset.name as "manifest.json" | "main.js" | "styles.css";
+  const download = async () => {
+    if (asset.id > 0) {
+      try {
+        return await api.downloadGithubPluginAssetById(
+          coordinates.owner,
+          coordinates.repository,
+          String(asset.id),
+          assetName,
+        );
+      } catch (error) {
+        if (!isGithubUnreachableError(error) && !(error instanceof ApiRequestError)) throw error;
+      }
+    }
     return await api.downloadGithubPluginAsset(
       coordinates.owner,
       coordinates.repository,
       releaseTag,
-      asset.name as "manifest.json" | "main.js" | "styles.css",
+      assetName,
     );
+  };
+  try {
+    return await download();
   } catch (error) {
     if (isGithubUnreachableError(error)) {
-      throw new Error("Could not download the plugin package from your EdgeEver instance.");
+      throw new Error(`Could not download ${assetName} from your EdgeEver instance.`);
     }
     throw error;
   }
@@ -222,6 +269,17 @@ const assertBundledEntry = (manifest: PluginManifest) => {
   if (entryPath !== "main.js") throw new Error("GitHub plugins must use ./main.js as the bundled entry.");
 };
 
+const parseGithubManifestText = (
+  coordinates: GithubRepositoryCoordinates,
+  manifestText: string,
+  manifestUrl: string,
+): GithubRepositoryManifest => ({
+  manifest: parseExtensionManifest(JSON.parse(manifestText) as unknown),
+  manifestText,
+  manifestUrl,
+  repositoryUrl: coordinates.repositoryUrl,
+});
+
 export const loadGithubRepositoryManifest = async (
   input: string,
   request: typeof fetch = window.fetch.bind(window),
@@ -229,19 +287,75 @@ export const loadGithubRepositoryManifest = async (
   const coordinates = parseGithubRepositoryUrl(input);
   if (!coordinates) throw new Error("Enter a public GitHub repository URL such as https://github.com/owner/repository.");
   const manifestUrl = `https://api.github.com/repos/${coordinates.owner}/${coordinates.repository}/contents/manifest.json`;
-  const manifestResponse = await readGithubApi(
+  let manifestResponse = await readGithubApi(
     request,
     manifestUrl,
     { Accept: "application/vnd.github.raw+json", "X-GitHub-Api-Version": GITHUB_API_VERSION },
   );
+  if (!manifestResponse.ok) {
+    manifestResponse = await readRawGithubManifest(request, coordinates)
+      ?? (isGithubRateLimitedStatus(manifestResponse.status)
+        ? await fetchGithubMetadataThroughInstance(manifestUrl).catch(() => manifestResponse)
+        : manifestResponse);
+  }
   if (!manifestResponse.ok) throw new Error(`Repository manifest request failed with HTTP ${manifestResponse.status}.`);
-  const manifestText = await manifestResponse.text();
-  return {
-    manifest: parseExtensionManifest(JSON.parse(manifestText) as unknown),
-    manifestText,
-    manifestUrl,
-    repositoryUrl: coordinates.repositoryUrl,
-  };
+  return parseGithubManifestText(coordinates, await manifestResponse.text(), manifestUrl);
+};
+
+export const loadGithubInstallableManifest = async (
+  input: string,
+  request: typeof fetch = window.fetch.bind(window),
+): Promise<GithubRepositoryManifest> => {
+  const coordinates = parseGithubRepositoryUrl(input);
+  if (!coordinates) throw new Error("Enter a public GitHub repository URL such as https://github.com/owner/repository.");
+  const latestUrl = `https://github.com/${coordinates.owner}/${coordinates.repository}/releases/latest/download/manifest.json`;
+  let lastStatus: number | null = null;
+
+  try {
+    const manifestText = await api.getGithubPluginLatestManifest(coordinates.owner, coordinates.repository);
+    if (manifestText.trim().length > 0) {
+      return parseGithubManifestText(coordinates, manifestText, latestUrl);
+    }
+  } catch {
+    // Instance may be down, unauthenticated in tests, or itself rate-limited by GitHub.
+  }
+
+  try {
+    const response = await request(latestUrl, {
+      cache: "no-store",
+      credentials: "omit",
+      redirect: "follow",
+      signal: AbortSignal.timeout(GITHUB_API_TIMEOUT_MS),
+    });
+    lastStatus = response.status;
+    if (response.ok) {
+      const manifestText = await response.text();
+      if (manifestText.trim().length > 0) {
+        return parseGithubManifestText(coordinates, manifestText, latestUrl);
+      }
+    }
+  } catch (error) {
+    if (!isGithubUnreachableError(error)) throw error;
+  }
+
+  const rawResponse = await readRawGithubManifest(request, coordinates);
+  if (rawResponse?.ok) {
+    const manifestText = await rawResponse.text();
+    if (manifestText.trim().length > 0) {
+      return parseGithubManifestText(
+        coordinates,
+        manifestText,
+        rawResponse.url || `https://raw.githubusercontent.com/${coordinates.owner}/${coordinates.repository}/HEAD/manifest.json`,
+      );
+    }
+  }
+  lastStatus = rawResponse?.status ?? lastStatus;
+
+  throw new Error(
+    lastStatus
+      ? `Latest GitHub plugin release request failed with HTTP ${lastStatus}.`
+      : "Could not read the latest GitHub plugin release from this device or your EdgeEver instance.",
+  );
 };
 
 export const downloadGithubExtension = async (

@@ -708,6 +708,8 @@ export const zhCN = {
       required: "{{name}} 为必填项。",
       secretConfigured: "已配置，留空表示保持不变",
       none: "无",
+      viewList: "查看列表",
+      listCount: "共 {{count}} 项",
     },
     details: {
       title: "插件详情",
@@ -736,7 +738,6 @@ export const zhCN = {
       addedPermissions: "新增能力声明",
       addedNetworkHosts: "新增网站声明（旧版元数据）",
       allowAndUpdate: "确认并更新",
-      officialAutoUpdated: "已将 {{count}} 个官方插件自动更新至最新验证版本。",
     },
     noticeTitle: "插件",
     panel: "插件面板",

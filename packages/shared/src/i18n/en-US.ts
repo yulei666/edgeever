@@ -708,6 +708,8 @@ export const enUS = {
       required: "{{name}} is required.",
       secretConfigured: "Configured — leave blank to keep unchanged",
       none: "None",
+      viewList: "View list",
+      listCount: "{{count}} items",
     },
     details: {
       title: "Plugin details",
@@ -736,7 +738,6 @@ export const enUS = {
       addedPermissions: "New capability declarations",
       addedNetworkHosts: "New website declarations (legacy metadata)",
       allowAndUpdate: "Confirm and update",
-      officialAutoUpdated: "Updated {{count}} official plugin(s) to the latest verified version.",
     },
     noticeTitle: "Plugin",
     panel: "Plugin panel",

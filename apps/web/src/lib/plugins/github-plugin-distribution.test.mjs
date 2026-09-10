@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { downloadGithubExtension, downloadPinnedGithubExtension, parseGithubRepositoryUrl } from "./github-plugin-distribution.ts";
+import { downloadGithubExtension, downloadPinnedGithubExtension, loadGithubInstallableManifest, loadGithubRepositoryManifest, parseGithubRepositoryUrl } from "./github-plugin-distribution.ts";
 
 const manifest = {
   type: "plugin",
@@ -100,6 +100,66 @@ describe("GitHub plugin distribution", () => {
 
     await expect(downloadGithubExtension("https://github.com/example/edgeever-plugin", request, downloadAsset))
       .rejects.toThrow("does not match the repository manifest");
+  });
+
+  test("reads an installable plugin from the latest GitHub Release without using the REST API", async () => {
+    const calls = [];
+    const request = async (input) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.includes("api.github.com")) throw new Error(`should not use GitHub REST: ${url}`);
+      if (url === "https://github.com/example/edgeever-plugin/releases/latest/download/manifest.json") {
+        return new Response(JSON.stringify(manifest));
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    };
+
+    const loaded = await loadGithubInstallableManifest("https://github.com/example/edgeever-plugin", request);
+
+    expect(loaded.manifest.version).toBe("1.2.3");
+    expect(calls).toEqual([
+      "https://github.com/example/edgeever-plugin/releases/latest/download/manifest.json",
+    ]);
+  });
+
+  test("falls back to raw GitHub when the latest Release download is rate-limited", async () => {
+    const calls = [];
+    const request = async (input) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.includes("api.github.com")) throw new Error(`should not use GitHub REST: ${url}`);
+      if (url.includes("/releases/latest/download/manifest.json")) {
+        return new Response("rate limited", { status: 403 });
+      }
+      if (url === "https://raw.githubusercontent.com/example/edgeever-plugin/HEAD/manifest.json") {
+        return new Response(JSON.stringify(manifest));
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    };
+
+    const loaded = await loadGithubInstallableManifest("https://github.com/example/edgeever-plugin", request);
+
+    expect(loaded.manifest.version).toBe("1.2.3");
+    expect(calls).toContain("https://raw.githubusercontent.com/example/edgeever-plugin/HEAD/manifest.json");
+    expect(calls.some((url) => url.includes("api.github.com"))).toBe(false);
+  });
+
+  test("reads the repository manifest from raw GitHub when the REST API rate-limits the browser", async () => {
+    const calls = [];
+    const request = async (input) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.includes("/contents/manifest.json")) return new Response("rate limited", { status: 403 });
+      if (url === "https://raw.githubusercontent.com/example/edgeever-plugin/HEAD/manifest.json") {
+        return new Response(JSON.stringify(manifest));
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    };
+
+    const loaded = await loadGithubRepositoryManifest("https://github.com/example/edgeever-plugin", request);
+
+    expect(loaded.manifest.version).toBe("1.2.3");
+    expect(calls).toContain("https://raw.githubusercontent.com/example/edgeever-plugin/HEAD/manifest.json");
   });
 
   test("explains a renderer network failure instead of showing Failed to fetch", async () => {
