@@ -171,6 +171,32 @@ describe("EdgeEver client HTTP contract", () => {
     expect(Array.from(new Uint8Array(buffer))).toEqual([1, 2, 3]);
   });
 
+  test("reads GitHub plugin metadata through the instance proxy", async () => {
+    const calls = [];
+    const client = createEdgeEverClient({
+      fetch: async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.endsWith("/manifest")) return new Response("{\"id\":\"plugin\"}");
+        if (url.includes("/releases/tags/missing")) return new Response(null, { status: 404 });
+        return Response.json({ tag_name: "v1.2.3", draft: false, assets: [] });
+      },
+    });
+
+    expect(await client.getGithubPluginRepositoryManifest("example-owner", "example-plugin")).toBe("{\"id\":\"plugin\"}");
+    expect(await client.getGithubPluginRelease("example-owner", "example-plugin", "missing")).toBeNull();
+    expect(await client.getGithubPluginRelease("example-owner", "example-plugin", "v1.2.3")).toEqual({
+      tag_name: "v1.2.3",
+      draft: false,
+      assets: [],
+    });
+    expect(calls).toEqual([
+      "/api/v1/plugins/github/example-owner/example-plugin/manifest",
+      "/api/v1/plugins/github/example-owner/example-plugin/releases/tags/missing",
+      "/api/v1/plugins/github/example-owner/example-plugin/releases/tags/v1.2.3",
+    ]);
+  });
+
   test("streams restored resources through bounded multipart requests", async () => {
     const calls = [];
     const client = createEdgeEverClient({

@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { downloadGithubReleaseAsset, downloadGithubReleaseAssetByTag } from "./plugin-distribution-routes.ts";
+import {
+  downloadGithubReleaseAsset,
+  downloadGithubReleaseAssetByTag,
+  readGithubReleaseByTag,
+  readGithubRepositoryManifestText,
+} from "./plugin-distribution-routes.ts";
 
 describe("GitHub plugin release asset proxy", () => {
   test("downloads a supported release asset on the server", async () => {
@@ -64,5 +69,47 @@ describe("GitHub plugin release asset proxy", () => {
       assetName: "main.js",
       request: async () => new Response("should not be fetched"),
     })).rejects.toThrow("Invalid GitHub release coordinates");
+  });
+
+  test("reads the raw repository manifest for live official plugin resolution", async () => {
+    const text = await readGithubRepositoryManifestText({
+      owner: "example",
+      repository: "edgeever-plugin",
+      request: async () => new Response("{\"version\":\"0.5.4\"}", { headers: { "content-length": "20" } }),
+    });
+    expect(text).toBe("{\"version\":\"0.5.4\"}");
+  });
+
+  test("reads a GitHub release by tag without exposing unrelated fields", async () => {
+    const release = await readGithubReleaseByTag({
+      owner: "example",
+      repository: "edgeever-plugin",
+      releaseTag: "v0.5.4",
+      request: async () => Response.json({
+        tag_name: "v0.5.4",
+        draft: false,
+        extra: "omit",
+        assets: [{
+          id: 9,
+          name: "main.js",
+          size: 12,
+          url: "https://api.github.com/assets/9",
+          browser_download_url: "https://github.com/download/main.js",
+          digest: "sha256:abc",
+        }],
+      }),
+    });
+    expect(release).toEqual({
+      tag_name: "v0.5.4",
+      draft: false,
+      assets: [{
+        id: 9,
+        name: "main.js",
+        size: 12,
+        url: "https://api.github.com/assets/9",
+        browser_download_url: "https://github.com/download/main.js",
+        digest: "sha256:abc",
+      }],
+    });
   });
 });

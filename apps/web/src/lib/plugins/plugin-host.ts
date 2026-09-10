@@ -36,7 +36,7 @@ import { markdownToDoc } from "@edgeever/shared";
 import type { EdgeEverRepository } from "@/lib/repository";
 import { WebPluginSecretStore, type PluginSecretStorage } from "@/lib/plugins/plugin-secret-store";
 import { WebPluginPackageStore, type CachedPluginPackage, type PluginPackageStorage } from "@/lib/plugins/plugin-package-store";
-import { downloadGithubExtension, extensionManifestsEqual, parseGithubRepositoryUrl, sha256Hex } from "@/lib/plugins/github-plugin-distribution";
+import { downloadGithubExtension, downloadPinnedGithubExtension, extensionManifestsEqual, parseGithubRepositoryUrl, sha256Hex } from "@/lib/plugins/github-plugin-distribution";
 import { subscribeRepositoryMutations, type RepositoryMutationEvent } from "@/lib/repository-events";
 
 const INSTALLED_EXTENSIONS_STORAGE_KEY = "edgeever.extensions.installed.v1";
@@ -497,7 +497,12 @@ export class EdgeEverPluginHost {
   }
 
   async installFromGithubRepository(input: string, marketplaceEntry?: MarketplaceEntry, confirmedManifest?: ExtensionManifest) {
-    const downloaded = await downloadGithubExtension(input);
+    // Official marketplace entries carry the live GitHub version after marketplace resolution.
+    const downloaded = marketplaceEntry
+      ? await downloadPinnedGithubExtension(input, marketplaceEntry.verification.version, {
+        requireStyles: Boolean(marketplaceEntry.verification.checksums?.stylesCss),
+      })
+      : await downloadGithubExtension(input);
     assertConfirmedManifest(confirmedManifest, downloaded.manifest);
     if (marketplaceEntry) this.assertMarketplaceDownload(marketplaceEntry, downloaded.manifest, downloaded.checksums);
     return this.replaceInstalledExtension(downloaded.manifest, downloaded.manifestUrl, {

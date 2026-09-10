@@ -1,21 +1,15 @@
 {
-  "version": "1.63.0",
+  "version": "1.63.2",
   "changes": {
     "en-US": [
-      "Import Markdown notes by dragging and dropping files, with more reliable note creation and sync handling.",
-      "Render visual notes consistently in shared pages and native viewers.",
-      "Add Linux AppImage automatic updates and make Linux downloads easier to find.",
-      "Improve desktop reliability with diagnostics for issue reports, safer file rendering, and dependable bundled plugin loading.",
-      "Refresh marketplace cards and add a Product Hunt support link in the personal center.",
-      "Reduce Docker runtime overhead with a bundled production runtime."
+      "Fix GitHub marketplace plugin installs failing with Failed to fetch on desktop. The instance now resolves official releases and downloads plugin assets, so daily updates no longer need a client-side GitHub API round trip. Update both the instance and the desktop app.",
+      "Fix Docker/NAS upgrades that drop container environment variables, leaving login working while AI and object-storage credentials could no longer be encrypted and new model services could not be added. The encryption root is stored on the data volume and generated when missing; the add-service form no longer looks fillable while encryption is unavailable. If saved credentials cannot be decrypted, re-enter the API key.",
+      "Fix the AI settings pane crashing when provider names, base URLs, or tag-suggestion prompts are missing."
     ],
     "zh-CN": [
-      "支持拖放导入 Markdown 笔记，并提升新建笔记与同步异常处理的可靠性。",
-      "在分享页面和原生客户端中一致呈现可视化笔记。",
-      "新增 Linux AppImage 自动更新，并让 Linux 下载入口更易发现。",
-      "通过问题反馈诊断信息、更安全的文件渲染和稳定的内置插件加载，提升桌面端可靠性。",
-      "优化插件市场卡片，并在个人中心加入 Product Hunt 支持入口。",
-      "通过内置生产运行时降低 Docker 运行开销。"
+      "修复桌面端从 GitHub 插件市场安装失败（Failed to fetch）的问题。实例会代为解析官方 Release 并下载插件，日常更新不再依赖客户端直接访问 GitHub。请同时更新实例和桌面端。",
+      "修复 Docker/NAS 升级丢掉容器环境变量后，登录仍可用但无法加密保存 AI 与对象存储凭据、也无法添加模型服务的问题。加密根密钥会写入数据卷，缺失时自动生成；加密仍不可用时“添加服务”不再呈现为可填写。若已保存的密钥无法解密，请重新填写 API Key。",
+      "修复 AI 设置在服务名称、接口地址或标签建议提示词缺失时崩溃的问题。"
     ]
   }
 }

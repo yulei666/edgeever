@@ -43,9 +43,9 @@ main.js
 styles.css（可选）
 ```
 
-GitHub 插件的 `entry` 固定为 `./main.js`，`main.js` 必须是无需相对模块导入的单文件 Bundle。EdgeEver 会读取默认分支 Manifest、查找相同版本的 Release、并行下载资产、验证 GitHub 提供的 SHA-256 Digest（如果存在），然后把验证后的包缓存到当前设备的 IndexedDB。`main.js` 上限为 5 MB，`styles.css` 上限为 1 MB。
+GitHub 插件的 `entry` 固定为 `./main.js`，`main.js` 必须是无需相对模块导入的单文件 Bundle。EdgeEver 会读取默认分支 Manifest、查找相同版本的 Release、并行下载资产、验证 GitHub 提供的 SHA-256 Digest（如果存在），然后把验证后的包缓存到当前设备的 IndexedDB。插件市场的 GitHub 元数据和 Release 资产都由当前 EdgeEver 实例代理获取，因此桌面端或浏览器不必直接访问 `api.github.com`。`main.js` 上限为 5 MB，`styles.css` 上限为 1 MB。
 
-EdgeEver 会在插件市场页面打开、窗口重新获得焦点及每 30 分钟检查一次更新。Registry 条目声明 `"publisher": "edgeever"` 的市场安装属于 EdgeEver 官方扩展，会自动更新到 Registry 中通过校验和固定的最新版本。社区市场扩展以及从 GitHub 或 Manifest 地址直接安装的扩展绝不会静默更新，用户必须点击「更新」并确认；如果手动确认的新版改变能力声明或旧版网络域名元数据，确认框会列出这些变化供用户查看。GitHub 分发的 Release `manifest.json` 必须与默认分支中用于提示更新的 Manifest 完全一致，否则安装会被拒绝。市场安装只跟随 Registry 中已经验证的新版本。
+EdgeEver 会在插件市场页面打开、窗口重新获得焦点及每 30 分钟检查一次更新。Registry 条目声明 `"publisher": "edgeever"` 的市场安装属于 EdgeEver 官方扩展。应用内 Registry 版本是已校验的基线；EdgeEver 会通过实例解析 GitHub 默认分支上的最新 Release，并自动更新到该校验和固定版本。社区市场扩展以及从 GitHub 或 Manifest 地址直接安装的扩展绝不会静默更新，用户必须点击「更新」并确认；如果手动确认的新版改变能力声明或旧版网络域名元数据，确认框会列出这些变化供用户查看。GitHub 分发的 Release `manifest.json` 必须与默认分支中用于提示更新的 Manifest 完全一致，否则安装会被拒绝。
 
 升级采用可回滚切换：新旧版本的包会分别缓存；如果新版无法激活，EdgeEver 会恢复原 Manifest、原启用状态和上一版本代码，而不是留下一个被破坏或被停用的插件。
 
