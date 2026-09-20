@@ -10,6 +10,7 @@ import {
   draftRunResumeAction,
   nextVersion,
   parseReleaseCheckpoint,
+  updateIosMarketingVersion,
   parseReleaseArgs,
   playDeliveryResumeAction,
   playDeliveryFailureStrategy,
@@ -93,6 +94,33 @@ describe("release automation", () => {
     expect(mobileWait).toBeGreaterThan(androidReady);
     expect(playDelivery).toBeGreaterThan(mobileWait);
     expect(playDelivery).toBeLessThan(allDraftGates);
+  });
+
+  test("starts App Store delivery from the native iOS tree without blocking GitHub publication", () => {
+    const releaseSource = readFileSync(new URL("./release.mjs", import.meta.url), "utf8");
+    const iosPlan = releaseSource.indexOf('planNativeRelease("ios"');
+    const iosDispatch = releaseSource.indexOf("startIosStoreDelivery(");
+    const publication = releaseSource.indexOf('"--draft=false"');
+    const iosWait = releaseSource.indexOf('label: "App Store delivery"');
+    const restoreDraft = releaseSource.lastIndexOf('"--draft=true"');
+
+    expect(iosPlan).toBeGreaterThan(0);
+    expect(iosDispatch).toBeGreaterThan(iosPlan);
+    expect(iosDispatch).toBeLessThan(publication);
+    expect(iosWait).toBeGreaterThan(publication);
+    expect(iosWait).toBeGreaterThan(restoreDraft);
+    expect(releaseSource).toContain('platform: "ios"');
+    expect(releaseSource).toContain("iosRebuild: iosPlan.rebuild");
+    expect(releaseSource).toContain("updateIosMarketingVersion");
+  });
+
+  test("rewrites the iOS marketing version onto the Release tag", () => {
+    expect(
+      updateIosMarketingVersion(
+        "// comment\nMARKETING_VERSION = 1.74.0\nCURRENT_PROJECT_VERSION = 49\n",
+        "1.79.0",
+      ),
+    ).toContain("MARKETING_VERSION = 1.79.0");
   });
 
   test("restores an exact Draft checkpoint without exposing it in Issue text", () => {

@@ -1,15 +1,21 @@
 {
-  "version": "1.78.1",
+  "version": "1.79.0",
   "changes": {
     "en-US": [
-      "Collapse duplicate inbox notebooks left by an earlier migration so each workspace keeps one inbox, and desktop sync no longer revives a second empty inbox.",
-      "Keep desktop screenshot notes from losing their uploaded image after the staging file is deleted.",
-      "Recover same-device memo updates when the server already applied the change but the desktop lost the acknowledgement, instead of showing a false conflict."
+      "Add GitHub-style fold blocks with slash /fold and Markdown details round-trip, and tighten their alignment in the editor, export, and print views.",
+      "Change a note's notebook from the mobile and iOS view screen without entering the editor.",
+      "Include screen resolution and device model in system information, and drop the local data directory so screenshots no longer expose usernames or account hashes.",
+      "Keep the collapsed memo editor toolbar from leaking a second row.",
+      "Keep Markdown source selection from highlighting other copies of the same text.",
+      "Squeeze CJK punctuation and wrap overflowing text more cleanly across web, mobile, iOS, and image cards."
     ],
     "zh-CN": [
-      "合并历史迁移留下的重复「等待分类」笔记本，每个工作区只保留一个收件箱；桌面同步也不会再把第二个空收件箱拉回来。",
-      "桌面端截图笔记在暂存文件被清掉后，会改用已上传的图片地址，不再变成文件名碎片。",
-      "同一台电脑上，服务端已经收下笔记但确认丢失时，桌面端会按本机最近保存内容自动对齐，不再误报冲突。"
+      "支持 GitHub 风格折叠块：斜杠 /fold 可插入，Markdown 的 details 可来回转换，并收紧编辑器、导出和打印里的对齐与尺寸。",
+      "手机和 iOS 在笔记浏览页就能改所属笔记本，不必先进编辑。",
+      "系统信息增加当前屏幕分辨率和设备型号，并去掉本机数据目录，避免截图或复制时带出用户名和账号哈希。",
+      "收起的笔记编辑工具栏不再漏出第二行色块。",
+      "Markdown 源码选中一段文字时，不再把文中其他相同片段一起点亮。",
+      "中日韩标点按规范挤压，超长文本在网页、手机、iOS 和图片卡片上也能正常换行。"
     ]
   }
 }

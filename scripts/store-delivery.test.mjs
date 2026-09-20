@@ -72,7 +72,18 @@ describe("store delivery command", () => {
     expect(workflow).not.toContain("--platform ios");
     expect(workflow).toContain("working-directory: apps/ios");
     expect(workflow).toContain(
-      "APP_STORE_BUILD_NUMBER: ${{ inputs.ios_build_number }}",
+      "group: edgeever-store-delivery-${{ inputs.release_tag }}-${{ inputs.platform }}",
+    );
+    expect(workflow).toContain(".edgeever-ci/scripts/xcode-cloud-control.py");
+    expect(workflow).toContain("--wait-valid");
+    expect(workflow).toContain("grep -E '^(build_number|app_store_build_id|build_run_id|source_sha|processing_state)='");
+    expect(workflow).toContain('refs/tags/${RELEASE_TAG}');
+    expect(workflow).toContain(
+      "APP_STORE_BUILD_NUMBER: ${{ steps.ios_build.outputs.build_number }}",
+    );
+    expect(workflow).toContain("APP_STORE_RELEASE_NOTES_EN:");
+    expect(workflow).not.toContain(
+      "Pass ios_build_number; do not build from apps/mobile or EAS.",
     );
     expect(workflow).toContain(
       "APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.EDGEEVER_APPLE_API_ISSUER }}",

@@ -112,6 +112,7 @@ import {
   normalizeImageGalleries,
   PLUGIN_EMBED_NODE_TYPE,
   pluginEmbedToMarkdown,
+  wrapDetailsContentHtml,
   isPdfAttachment,
   resolveMemoContentDoc,
   type Notebook,
@@ -609,6 +610,7 @@ const RichEditorPane = ({
       blockquote: "",
       "code-block": "",
       divider: "",
+      fold: "",
       table: "",
       "current-date": "",
       "current-time": "",
@@ -642,6 +644,7 @@ const RichEditorPane = ({
       blockquote: t("editorToolbar.quote"),
       "code-block": t("editorToolbar.codeBlock"),
       divider: t("editorToolbar.horizontalRule"),
+      fold: t("editorToolbar.fold"),
       table: t("editorToolbar.table"),
       "current-date": t("slashMenu.items.currentDate"),
       "current-time": t("slashMenu.items.currentTime"),
@@ -1200,6 +1203,7 @@ const RichEditorPane = ({
         }
         return true;
       },
+      transformPastedHTML: (html) => wrapDetailsContentHtml(html),
       handlePaste: (_view, event) => {
         const files = getResourceFilesFromDataTransfer(event.clipboardData);
 
