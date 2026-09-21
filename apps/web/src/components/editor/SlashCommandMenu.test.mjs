@@ -29,6 +29,8 @@ const labels = {
     divider: "分割线",
     fold: "折叠块",
     table: "表格",
+    "inline-math": "插入公式",
+    "block-math": "块级公式",
     "current-date": "当前日期",
     "current-time": "当前时间",
     "current-date-time": "当前日期和时间",
@@ -45,7 +47,7 @@ describe("slash command menu", () => {
     const unfilteredItems = filterSlashCommandItems(items, "");
     const heading6Index = unfilteredItems.findIndex((item) => item.id === "heading-6");
 
-    expect(unfilteredItems).toHaveLength(22);
+    expect(unfilteredItems).toHaveLength(24);
     expect(unfilteredItems.slice(heading6Index + 1, heading6Index + 4).map((item) => item.id)).toEqual([
       "current-date",
       "current-time",
@@ -83,6 +85,8 @@ describe("slash command menu", () => {
       "divider",
       "fold",
       "table",
+      "math",
+      "equation",
       "upload",
       "note",
       "link",
@@ -93,6 +97,8 @@ describe("slash command menu", () => {
     expect(filterSlashCommandItems(items, "collapse").map((item) => item.id)).toEqual(["fold"]);
     expect(filterSlashCommandItems(items, "table").map((item) => item.id)).toEqual(["table"]);
     expect(filterSlashCommandItems(items, "task").map((item) => item.id)).toEqual(["task-list"]);
+    expect(filterSlashCommandItems(items, "公式").map((item) => item.id)).toEqual(["inline-math", "block-math"]);
+    expect(filterSlashCommandItems(items, "equation").map((item) => item.id)).toEqual(["block-math"]);
   });
 
   test("formats local date and time as stable static text", () => {

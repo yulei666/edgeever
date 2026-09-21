@@ -1,21 +1,20 @@
 {
-  "version": "1.79.0",
+  "version": "1.80.0",
   "changes": {
     "en-US": [
-      "Add GitHub-style fold blocks with slash /fold and Markdown details round-trip, and tighten their alignment in the editor, export, and print views.",
-      "Change a note's notebook from the mobile and iOS view screen without entering the editor.",
-      "Include screen resolution and device model in system information, and drop the local data directory so screenshots no longer expose usernames or account hashes.",
-      "Keep the collapsed memo editor toolbar from leaking a second row.",
-      "Keep Markdown source selection from highlighting other copies of the same text.",
-      "Squeeze CJK punctuation and wrap overflowing text more cleanly across web, mobile, iOS, and image cards."
+      "Add block drag handles and formula insertion in the editor, with caret-aware insertion and a clearer table icon.",
+      "Show the Mac product name and physical screen resolution more accurately in system information.",
+      "Make emptying the trash reliable when it is already empty."
     ],
     "zh-CN": [
-      "支持 GitHub 风格折叠块：斜杠 /fold 可插入，Markdown 的 details 可来回转换，并收紧编辑器、导出和打印里的对齐与尺寸。",
-      "手机和 iOS 在笔记浏览页就能改所属笔记本，不必先进编辑。",
-      "系统信息增加当前屏幕分辨率和设备型号，并去掉本机数据目录，避免截图或复制时带出用户名和账号哈希。",
-      "收起的笔记编辑工具栏不再漏出第二行色块。",
-      "Markdown 源码选中一段文字时，不再把文中其他相同片段一起点亮。",
-      "中日韩标点按规范挤压，超长文本在网页、手机、iOS 和图片卡片上也能正常换行。"
+      "编辑器新增内容块拖拽手柄与公式插入，并支持在光标处插入公式及更清晰的表格图标。",
+      "系统信息现在能更准确地显示 Mac 产品名称和物理屏幕分辨率。",
+      "修复废纸篓已为空时再次清空可能失败的问题。"
+    ],
+    "ja": [
+      "エディターにブロックのドラッグハンドルと数式挿入を追加し、カーソル位置への挿入と分かりやすい表アイコンに対応しました。",
+      "システム情報でMacの製品名と物理画面解像度をより正確に表示するようになりました。",
+      "ゴミ箱がすでに空の場合でも、空にする操作が失敗しないよう修正しました。"
     ]
   }
 }

@@ -63,7 +63,12 @@ Xcode Cloud **overwrites** `CFBundleVersion` with its managed counter:
 Rules:
 
 1. Next Cloud number must be **greater than** every build already on ASC for this app.
-2. Keep `apps/ios/Config/Version.xcconfig` → `CURRENT_PROJECT_VERSION` in the same ballpark (the repo stamps Cloud’s `CI_BUILD_NUMBER` into the archive via `ci_pre_xcodebuild.sh`).
+2. Keep `apps/ios/Config/Version.xcconfig` as the only marketing-version source.
+   Do not hardcode `MARKETING_VERSION` in `project.yml`; Cloud runs `xcodegen`
+   in `ci_post_clone`, and a stale YAML value would archive the previous App
+   Store version. `ci_pre_xcodebuild.sh` copies the xcconfig version into the
+   generated pbxproj and stamps Cloud’s `CI_BUILD_NUMBER` into
+   `CURRENT_PROJECT_VERSION`.
 3. Before a store run, from a machine with API credentials:
 
    ```sh
@@ -91,8 +96,12 @@ Rules:
 ## Routine: ship a store binary
 
 Formal Releases do this automatically when `apps/ios` or the shared editor
-runtime changed: `bun run release` bumps `MARKETING_VERSION`, starts Xcode Cloud
-for the Release tag, waits until the build is **Valid**, and submits App Review.
+runtime changed: `bun run release` bumps `MARKETING_VERSION`, starts the Manual
+Xcode Cloud Archive workflow, requires the Cloud source's marketing version
+to match the Release tag, waits until the build is **Valid**, and submits App
+Review. The Cloud workflow stays Manual, so Apple rejects starting it on a
+tag that is not in the start condition. `project.yml` must not hardcode
+`MARKETING_VERSION`; Cloud regenerates the Xcode project during `ci_post_clone`.
 
 To retry or ship iOS without a new GitHub Release:
 
@@ -129,6 +138,7 @@ On **macOS beta**, do **not** upload that IPA; use Xcode Cloud instead. `archive
 | Cloud fails in post-clone on bun/xcodegen | Network / Homebrew on Cloud | Re-run; inspect `ci_post_clone` log |
 | Editor blank in app | EditorBundle not built | Confirm `ci_post_clone` log shows bundle build |
 | Hours running out | Workflow not Manual | Disable push/PR start conditions |
+| PrepareBuildForAppStoreConnect fails with the previous live version (for example 1.74.0) | `project.yml` hardcoded `MARKETING_VERSION` and `xcodegen` overwrote `Version.xcconfig` | Keep marketing version only in `Config/Version.xcconfig`; `ci_pre_xcodebuild.sh` must stamp it into the pbxproj |
 
 ## Related
 

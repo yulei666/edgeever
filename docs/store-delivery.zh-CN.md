@@ -73,7 +73,7 @@ EAS Submit 要求应用已经在对应商店中创建；Google Play API 提交�
 bun run publish:stores -- --release v1.7.0
 ```
 
-只交付 iOS，并为该 Release tag 启动 Xcode Cloud：
+只交付 iOS，并启动手动触发的 Xcode Cloud Archive：
 
 ```sh
 bun run publish:stores -- --release v1.7.0 --platform ios
@@ -124,10 +124,11 @@ Release。默认命令直接使用 Production；只有明确要求测试交付�
 原生 iOS 商店二进制来自 **`apps/ios`**（SwiftUI），不再走 Expo EAS。
 在 macOS beta 本机上，Archive 必须通过 **Xcode Cloud**，保证
 `BuildMachineOSBuild` 来自正式系统镜像——见
-[iOS Xcode Cloud](ios-xcode-cloud.md)。商店交付工作流会针对 Release tag 启动
-该 Archive，等到 App Store Connect 将构建标为 Valid，再用 Fastlane（`apps/ios`
-的 `submit_review`）提交 App Review，并设置为审核通过后自动发布。只有复用已经
-上传的构建时才传入 `--ios-build-number`。元数据、协议、审核信息或凭据不完整时
+[iOS Xcode Cloud](ios-xcode-cloud.md)。商店交付工作流会按 Archive 工作流配置的
+默认分支启动这次手动构建，并要求 Cloud 源码的 MARKETING_VERSION 与 Release tag 一致，等到 App Store
+Connect 将构建标为 Valid，再用 Fastlane（`apps/ios` 的 `submit_review`）提交
+App Review，并设置为审核通过后自动发布。只有复用已经上传的构建时才传入
+`--ios-build-number`。元数据、协议、审核信息或凭据不完整时
 工作流会失败，不会改为提交其他构建。
 
 商店列表本地化（含日文）存放在 `apps/mobile/store-assets/`，需在 App Store

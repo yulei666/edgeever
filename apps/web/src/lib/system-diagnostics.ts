@@ -1,4 +1,4 @@
-import { summarizeSyncQueue, type ClientDisplaySizeInput } from "@edgeever/shared";
+import { summarizeSyncQueue, toDevicePixelScreenSize, type ClientDisplaySizeInput } from "@edgeever/shared";
 import { api, getConfiguredDesktopApiBaseUrl } from "./api";
 import { localDb } from "./local-db";
 import { createLocalDataScope } from "./local-mirror";
@@ -66,13 +66,11 @@ const browserOperatingSystem = (userAgent: string, platform: string, platformVer
 
 export const readBrowserClientDisplaySize = (): ClientDisplaySizeInput | null => {
   if (typeof window === "undefined" || typeof screen === "undefined") return null;
-  return {
+  return toDevicePixelScreenSize({
     devicePixelRatio: Number(window.devicePixelRatio) || 1,
     screenHeight: Number(screen.height),
     screenWidth: Number(screen.width),
-    windowHeight: Number(window.innerHeight),
-    windowWidth: Number(window.innerWidth),
-  };
+  });
 };
 
 const desktopOperatingSystem = (platform: string, version: string) => {

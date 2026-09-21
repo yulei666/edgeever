@@ -18,6 +18,7 @@ import {
   Paperclip,
   Link,
   Link2,
+  Sigma,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -155,6 +156,7 @@ export const EditorToolbar = ({
   onPickAttachment,
   onPickExternalLink,
   onPickNoteLink,
+  onPickMathFormula,
   externalLinkActive = false,
 }: {
   editor: Editor | null;
@@ -166,6 +168,7 @@ export const EditorToolbar = ({
   /** Insert or edit an external hyperlink (not a note reference). */
   onPickExternalLink?: () => void;
   onPickNoteLink?: () => void;
+  onPickMathFormula?: () => void;
   externalLinkActive?: boolean;
 }) => {
   const { t } = useTranslation();
@@ -564,6 +567,16 @@ export const EditorToolbar = ({
           >
             <ChartNoAxesCombined className="h-4 w-4" />
           </EditorToolbarButton>
+          {onPickMathFormula && (
+            <EditorToolbarButton
+              title={t("editorToolbar.math")}
+              active={isActive("inlineMath") || isActive("blockMath")}
+              disabled={disabled}
+              onClick={onPickMathFormula}
+            >
+              <Sigma className="h-4 w-4" />
+            </EditorToolbarButton>
+          )}
           <EditorToolbarButton
             title={t("editorToolbar.horizontalRule")}
             disabled={disabled}

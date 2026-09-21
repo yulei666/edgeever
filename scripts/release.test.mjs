@@ -11,6 +11,7 @@ import {
   nextVersion,
   parseReleaseCheckpoint,
   updateIosMarketingVersion,
+  updateIosProjectMarketingVersion,
   parseReleaseArgs,
   playDeliveryResumeAction,
   playDeliveryFailureStrategy,
@@ -121,6 +122,19 @@ describe("release automation", () => {
         "1.79.0",
       ),
     ).toContain("MARKETING_VERSION = 1.79.0");
+  });
+
+  test("keeps the generated iOS project aligned with the Release tag", () => {
+    const updated = updateIosProjectMarketingVersion(
+      [
+        "MARKETING_VERSION = 1.79.0;",
+        "MARKETING_VERSION = 1.79.0;",
+      ].join("\n"),
+      "1.80.0",
+    );
+
+    expect(updated.match(/MARKETING_VERSION = 1\.80\.0;/g)).toHaveLength(2);
+    expect(updated).not.toContain("MARKETING_VERSION = 1.79.0;");
   });
 
   test("restores an exact Draft checkpoint without exposing it in Issue text", () => {
@@ -290,6 +304,7 @@ describe("release automation", () => {
       "--label", "maintenance",
       "--change-en", "Update the release flow.",
       "--change-zh", "更新发布流程。",
+      "--change-locale", "ja:リリースフローを更新します。",
       "--change-commit", "abc1234",
     ])).toMatchObject({ installDesktop: false });
     expect(parseReleaseArgs([
@@ -298,9 +313,29 @@ describe("release automation", () => {
       "--label", "maintenance",
       "--change-en", "Update the release flow.",
       "--change-zh", "更新发布流程。",
+      "--change-locale", "ja:リリースフローを更新します。",
       "--change-commit", "abc1234",
       "--install-desktop",
     ])).toMatchObject({ installDesktop: true });
+  });
+
+  test("requires Japanese App Store What's New", () => {
+    expect(() =>
+      parseReleaseArgs([
+        "--issue-title",
+        "Missing Japanese notes",
+        "--bump",
+        "patch",
+        "--label",
+        "bug",
+        "--change-en",
+        "Fix a bug.",
+        "--change-zh",
+        "修复问题。",
+        "--change-commit",
+        "abc1234",
+      ]),
+    ).toThrow("--change-locale ja is required");
   });
 
   test("rejects mismatched bilingual changes", () => {

@@ -571,22 +571,17 @@ struct SettingsView: View {
     private var currentClientDisplaySize: String {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         let screen = scene?.screen ?? UIScreen.main
-        let window = scene?.windows.first(where: \.isKeyWindow) ?? scene?.windows.first
-        let windowSize = window?.bounds.size ?? screen.bounds.size
         let screenWidth = Int(screen.bounds.width.rounded())
         let screenHeight = Int(screen.bounds.height.rounded())
-        let windowWidth = Int(windowSize.width.rounded())
-        let windowHeight = Int(windowSize.height.rounded())
-        guard screenWidth > 0, screenHeight > 0, windowWidth > 0, windowHeight > 0, screen.scale > 0 else {
+        guard screenWidth > 0, screenHeight > 0, screen.scale > 0 else {
             return env.preferences.t("未知", en: "Unknown")
         }
         let screenText = "\(screenWidth)×\(screenHeight)"
-        let windowText = "\(windowWidth)×\(windowHeight)"
         let dpr = Self.formatDevicePixelRatio(screen.scale)
         return env.preferences.t(
-            "\(screenText) @\(dpr)x（窗口 \(windowText)）",
-            en: "\(screenText) @\(dpr)x (window \(windowText))",
-            ja: "\(screenText) @\(dpr)x（ウィンドウ \(windowText)）"
+            "\(screenText) @\(dpr)x",
+            en: "\(screenText) @\(dpr)x",
+            ja: "\(screenText) @\(dpr)x"
         )
     }
 

@@ -37,13 +37,14 @@ describe("system information diagnostic fields", () => {
     expect(feedbackSource).toContain("clientRuntime: clientRuntimeQuery.data");
   });
 
-  test("includes current screen resolution with window size", () => {
+  test("includes current screen resolution", () => {
     expect(source).toContain('t("systemInfo.screenResolution")');
     expect(source).toContain('t("systemInfo.screenResolutionValue", parts)');
     expect(source).toMatch(/systemInfo\.screenResolution[\s\S]{0,220}colSpan: "full"/);
     expect(source).toContain("readBrowserClientDisplaySize");
     expect(source).toContain("getClientDisplaySizeParts");
     expect(source).toContain('window.addEventListener("resize", onResize)');
+    expect(readFileSync(new URL("../../lib/system-diagnostics.ts", import.meta.url), "utf8")).toContain("toDevicePixelScreenSize");
   });
 
   test("distinguishes empty sync from never synced", () => {

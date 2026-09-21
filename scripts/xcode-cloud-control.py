@@ -325,10 +325,26 @@ def describe_failed_run(client: AppStoreConnect, build_run_id: str) -> None:
         print(
             f"- action={action_attributes.get('name')} "
             f"type={action_attributes.get('actionType')} "
+            f"progress={action_attributes.get('executionProgress')} "
             f"completion={action_attributes.get('completionStatus')} "
             f"issues={action_attributes.get('issueCounts')}",
             flush=True,
         )
+        action_id = action.get("id")
+        if not action_id:
+            continue
+        issue_payload = client.request(
+            "GET",
+            f"/v1/ciBuildActions/{action_id}/issues?limit=50",
+        )
+        for issue in issue_payload.get("data") or []:
+            issue_attributes = issue.get("attributes") or {}
+            print(
+                f"  issue type={issue_attributes.get('issueType')} "
+                f"category={issue_attributes.get('category')} "
+                f"message={issue_attributes.get('message')}",
+                flush=True,
+            )
 
 
 def wait_for_app_store_build(
@@ -441,6 +457,35 @@ def command_start(args: argparse.Namespace, client: AppStoreConnect) -> None:
         print_run_outputs(run, store_build)
 
 
+def command_describe(args: argparse.Namespace, client: AppStoreConnect) -> None:
+    run = read_build_run(client, args.build_run_id)
+    attributes = run.get("attributes") or {}
+    print(
+        f"Xcode Cloud build id={run.get('id')} number={attributes.get('number')} "
+        f"progress={attributes.get('executionProgress')} "
+        f"completion={attributes.get('completionStatus')} "
+        f"sha={source_sha(run) or 'pending'}",
+        flush=True,
+    )
+    describe_failed_run(client, args.build_run_id)
+    builds = client.request(
+        "GET",
+        f"/v1/ciBuildRuns/{args.build_run_id}/builds?limit=50&"
+        "fields[builds]=version,processingState,uploadedDate",
+    ).get("data") or []
+    if not builds:
+        print("No App Store Connect builds are attached to this Cloud run.", flush=True)
+        return
+    for build in builds:
+        build_attributes = build.get("attributes") or {}
+        print(
+            f"App Store build id={build.get('id')} version={build_attributes.get('version')} "
+            f"processing={build_attributes.get('processingState')} "
+            f"uploaded={build_attributes.get('uploadedDate')}",
+            flush=True,
+        )
+
+
 def command_wait(args: argparse.Namespace, client: AppStoreConnect) -> None:
     run = wait_for_cloud_build(
         client,
@@ -504,6 +549,9 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--timeout-seconds", type=int, default=85 * 60)
     start.add_argument("--valid-timeout-seconds", type=int, default=25 * 60)
 
+    describe = sub.add_parser("describe", help="Dump a Cloud run's actions, issues, and ASC builds")
+    describe.add_argument("--build-run-id", required=True)
+
     wait = sub.add_parser("wait", help="Monitor an existing Xcode Cloud build")
     wait.add_argument("--build-run-id", required=True)
     wait.add_argument("--require-sha", default="")
@@ -525,6 +573,9 @@ def main(argv: list[str] | None = None) -> None:
         return
     if args.command == "start":
         command_start(args, client)
+        return
+    if args.command == "describe":
+        command_describe(args, client)
         return
     if args.command == "wait":
         command_wait(args, client)

@@ -18,10 +18,12 @@ bun run release -- \
   --label enhancement \
   --change-en "Run required release checks in parallel." \
   --change-zh "并行执行发布所需检查。" \
+  --change-locale "ja:必要なリリースチェックを並列実行します。" \
   --change-commit "abcdef1"
 ```
 
-Repeat `--change-en`, `--change-zh`, and `--change-commit` as matching groups.
+Repeat `--change-en`, `--change-zh`, `--change-locale ja:`, and `--change-commit` as matching groups.
+Japanese What's New is required because the App Store listing includes Japanese.
 One change may cover multiple comma-separated commits:
 
 ```bash

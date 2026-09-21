@@ -95,6 +95,15 @@ const MarkdownSourceEditor = lazy(() =>
 import { sanitizeAndScopeCss } from "@/lib/css-sandbox";
 import { RevisionHistoryDialog } from "./dialogs/RevisionHistoryDialog";
 import { ExternalLinkDialog } from "./dialogs/ExternalLinkDialog";
+import { MathFormulaDialog } from "./dialogs/MathFormulaDialog";
+import { EditorBlockDragHandle } from "./editor/EditorBlockDragHandle";
+import {
+  applyMathFormula,
+  deleteMathFormula,
+  resolveMathFormulaTarget,
+  selectedTextAsLatex,
+  type MathFormulaDraft,
+} from "./editor/math-formula";
 import { memoShareQueryKey, ShareMemoDialog } from "./dialogs/ShareMemoDialog";
 import { ShareNoteImageDialog } from "./dialogs/ShareNoteImageDialog";
 import { AiAssistantDialog, type AiAssistantAnchor } from "./dialogs/AiAssistantDialog";
@@ -255,6 +264,7 @@ import {
   getNoteLinkFromEventTarget,
   getNoteLinkHintPosition,
   getResourceFilesFromDataTransfer,
+  shouldInsertDroppedResourceFiles,
   isCreatedMemoEditorFocused,
   isEditorReady,
   MemoSaveRequestError,
@@ -446,6 +456,8 @@ const RichEditorPane = ({
     showTextField: true,
     canRemove: false,
   });
+  const [mathFormulaOpen, setMathFormulaOpen] = useState(false);
+  const [mathFormulaDraft, setMathFormulaDraft] = useState<MathFormulaDraft | null>(null);
   const {
     menuTarget: resourceMenuTarget,
     dialog: resourceDialog,
@@ -575,6 +587,7 @@ const RichEditorPane = ({
     setAiInsertionTarget(null);
     closeNoteReplaceRef.current();
     setExternalLinkDialogOpen(false);
+    setMathFormulaOpen(false);
     setNoteLinkPickerOpen(false);
   }, [desktopReadingProtection]);
 
@@ -590,6 +603,13 @@ const RichEditorPane = ({
   const mobileSaveTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const openExternalLinkDialogRef = useRef<() => void>(() => undefined);
+  const openMathFormulaRef = useRef<(kind?: "inline" | "block", range?: { from: number; to: number }) => void>(() => undefined);
+  const mathFormulaDraftRef = useRef<MathFormulaDraft | null>(null);
+  const mathClickRef = useRef<(node: { attrs: Record<string, unknown> }, pos: number, kind: "inline" | "block") => void>(() => undefined);
+  const mathematicsExtensionsRef = useRef(createEdgeEverMathematics({
+    onInlineClick: (node, pos) => mathClickRef.current(node, pos, "inline"),
+    onBlockClick: (node, pos) => mathClickRef.current(node, pos, "block"),
+  }));
   const slashCommandLabelsRef = useRef<SlashCommandLabels>({
     menu: "",
     empty: "",
@@ -612,6 +632,8 @@ const RichEditorPane = ({
       divider: "",
       fold: "",
       table: "",
+      "inline-math": "",
+      "block-math": "",
       "current-date": "",
       "current-time": "",
       "current-date-time": "",
@@ -646,6 +668,8 @@ const RichEditorPane = ({
       divider: t("editorToolbar.horizontalRule"),
       fold: t("editorToolbar.fold"),
       table: t("editorToolbar.table"),
+      "inline-math": t("editorToolbar.math"),
+      "block-math": t("editorToolbar.blockMath"),
       "current-date": t("slashMenu.items.currentDate"),
       "current-time": t("slashMenu.items.currentTime"),
       "current-date-time": t("slashMenu.items.currentDateTime"),
@@ -661,6 +685,7 @@ const RichEditorPane = ({
       openAttachmentPicker: () => fileInputRef.current?.click(),
       openExternalLinkPicker: () => openExternalLinkDialogRef.current(),
       openNoteLinkPicker: () => setNoteLinkPickerOpen(true),
+      openMathFormula: (kind, range) => openMathFormulaRef.current(kind, range),
     };
   }
   const slashCommandExtensionRef = useRef<ReturnType<typeof createSlashCommandExtension> | null>(null);
@@ -1064,8 +1089,12 @@ const RichEditorPane = ({
   const editor = useEditor({
     extensions: [
       ...createEdgeEverDocumentExtensions({
-        mathematics: createEdgeEverMathematics(),
-        starterKit: { codeBlock: false, link: false },
+        mathematics: mathematicsExtensionsRef.current,
+        starterKit: {
+          codeBlock: false,
+          link: false,
+          dropcursor: { color: "#16A06E", width: 2 },
+        },
         image: false,
         gallery: EditableImageGallery,
         pdf: PdfAttachment,
@@ -1215,15 +1244,16 @@ const RichEditorPane = ({
         insertResourceFiles(files);
         return true;
       },
-      handleDrop: (_view, event) => {
-        const files = getResourceFilesFromDataTransfer(event.dataTransfer);
-
-        if (files.length === 0) {
+      handleDrop: (view, event) => {
+        if (!shouldInsertDroppedResourceFiles({
+          dataTransfer: event.dataTransfer,
+          isInternalNodeDrag: Boolean(view.dragging),
+        })) {
           return false;
         }
 
         event.preventDefault();
-        insertResourceFiles(files);
+        insertResourceFiles(getResourceFilesFromDataTransfer(event.dataTransfer));
         return true;
       },
     },
@@ -1349,6 +1379,49 @@ const RichEditorPane = ({
   ]);
 
   openExternalLinkDialogRef.current = openExternalLinkDialog;
+
+  const openMathFormula = useCallback((kind: "inline" | "block" = "inline", range?: { from: number; to: number }) => {
+    if (effectiveReadOnly || !isEditorReady(editor) || useMarkdownSourceEditor || useMobilePlainTextEditor) {
+      return;
+    }
+
+    if (!range) {
+      const existing = resolveMathFormulaTarget(editor);
+      if (existing) {
+        mathFormulaDraftRef.current = existing;
+        setMathFormulaDraft(existing);
+        setMathFormulaOpen(true);
+        return;
+      }
+    }
+
+    const from = range?.from ?? editor.state.selection.from;
+    const to = range?.to ?? editor.state.selection.to;
+    const draft: MathFormulaDraft = {
+      kind,
+      latex: range ? "" : selectedTextAsLatex(editor),
+      from,
+      to,
+    };
+    mathFormulaDraftRef.current = draft;
+    setMathFormulaDraft(draft);
+    setMathFormulaOpen(true);
+  }, [editor, effectiveReadOnly, useMarkdownSourceEditor, useMobilePlainTextEditor]);
+
+  openMathFormulaRef.current = openMathFormula;
+  mathClickRef.current = (_node, pos, kind) => {
+    if (effectiveReadOnly || !isEditorReady(editor) || useMarkdownSourceEditor || useMobilePlainTextEditor) {
+      return;
+    }
+    const existing = resolveMathFormulaTarget(editor, pos) ?? {
+      kind,
+      latex: String(_node.attrs.latex ?? ""),
+      pos,
+    };
+    mathFormulaDraftRef.current = existing;
+    setMathFormulaDraft(existing);
+    setMathFormulaOpen(true);
+  };
 
   const applyExternalLink = useCallback(
     ({ href, text }: { href: string; text: string }) => {
@@ -3396,6 +3469,34 @@ const RichEditorPane = ({
         onApply={applyExternalLink}
         onRemove={removeExternalLink}
       />
+      <MathFormulaDialog
+        open={mathFormulaOpen}
+        draft={mathFormulaDraft}
+        onOpenChange={setMathFormulaOpen}
+        onApply={(draft) => {
+          if (!isEditorReady(editor) || effectiveReadOnly) return;
+          const stored = mathFormulaDraftRef.current;
+          applyMathFormula(editor, {
+            ...draft,
+            from: stored?.from ?? draft.from,
+            to: stored?.to ?? draft.to,
+            pos: stored?.pos ?? draft.pos,
+          });
+          editor.chain().focus(stored?.from ?? draft.from ?? null, { scrollIntoView: true }).run();
+        }}
+        onRemove={
+          mathFormulaDraft && typeof mathFormulaDraft.pos === "number"
+            ? () => {
+              if (!isEditorReady(editor) || effectiveReadOnly) return;
+              const stored = mathFormulaDraftRef.current;
+              const pos = stored?.pos ?? mathFormulaDraft.pos;
+              if (typeof pos !== "number") return;
+              deleteMathFormula(editor, { kind: stored?.kind ?? mathFormulaDraft.kind, pos });
+              editor.chain().focus(pos, { scrollIntoView: true }).run();
+            }
+            : undefined
+        }
+      />
       {noteLinkPickerOpen && (
         <EditorNoteLinkPicker
           query={noteLinkQuery}
@@ -3818,6 +3919,7 @@ const RichEditorPane = ({
             onPickExternalLink={openExternalLinkDialog}
             externalLinkActive={externalLinkActive}
             onPickNoteLink={() => setNoteLinkPickerOpen(true)}
+            onPickMathFormula={() => openMathFormula()}
           />
         )}
         <EditorSaveRecoveryBanner
@@ -3983,6 +4085,7 @@ const RichEditorPane = ({
               </div>
             ) : (
               <div
+                className="relative"
                 onMouseOver={handleEditorMouseOver}
                 onMouseOut={handleEditorMouseOut}
                 onFocusCapture={handleEditorFocusCapture}
@@ -4005,6 +4108,9 @@ const RichEditorPane = ({
                     {t("aiAssistant.openForSelection")}
                   </Button>
                 </BubbleMenu>
+                {!isMobileViewport && !effectiveReadOnly && isEditorReady(editor) ? (
+                  <EditorBlockDragHandle editor={editor} />
+                ) : null}
                 <EditorContent editor={editor} />
               </div>
             )}

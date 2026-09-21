@@ -84,7 +84,7 @@ both runtimes changed:
 bun run publish:stores -- --release v1.7.0
 ```
 
-Deliver only iOS, starting Xcode Cloud for the Release tag:
+Deliver only iOS, starting the Manual Xcode Cloud Archive workflow:
 
 ```sh
 bun run publish:stores -- --release v1.7.0 --platform ios
@@ -140,7 +140,8 @@ Native iOS store binaries come from **`apps/ios`** (SwiftUI), not Expo EAS.
 On macOS beta hosts, archives must go through **Xcode Cloud** so
 `BuildMachineOSBuild` is a release OS image — see
 [iOS Xcode Cloud](ios-xcode-cloud.md). The store-delivery workflow starts that
-Archive workflow for the Release tag, waits until App Store Connect marks the
+Manual Archive workflow on its configured default branch, requires the Cloud
+source's `MARKETING_VERSION` to match the Release tag, waits until App Store Connect marks the
 build Valid, then Fastlane (`apps/ios` `submit_review`) submits App Review and
 configures automatic release after approval. Pass `--ios-build-number` only to
 reuse an already uploaded build. Missing metadata, agreements, review

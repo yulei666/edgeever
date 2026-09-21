@@ -2,9 +2,43 @@ import { describe, expect, test } from "bun:test";
 import { readDesktopDeviceModel } from "./desktop-device-model.mjs";
 
 describe("desktop device model", () => {
-  test("reads the macOS hardware model identifier", () => {
+  test("prefers the macOS IOKit product name over the board identifier", () => {
     expect(readDesktopDeviceModel({
       execFileSync: (command, args) => {
+        expect(command).toBe("ioreg");
+        expect(args).toEqual(["-p", "IODeviceTree", "-n", "product", "-rd1"]);
+        return `
++-o product  <class IOPlatformDevice>
+    {
+      "product-description" = <"Mac mini (2024)">
+      "product-name" = <"Mac mini (2024)">
+      "sub-product-type" = <"Mac16,11">
+    }
+`;
+      },
+      platform: "darwin",
+    })).toBe("Mac mini (2024)");
+  });
+
+  test("falls back to system_profiler machine name when IOKit product-name is missing", () => {
+    expect(readDesktopDeviceModel({
+      execFileSync: (command, args) => {
+        if (command === "ioreg") return `"model" = <"Mac16,7">\n`;
+        expect(command).toBe("system_profiler");
+        expect(args).toEqual(["SPHardwareDataType", "-json"]);
+        return JSON.stringify({
+          SPHardwareDataType: [{ machine_model: "Mac16,7", machine_name: "MacBook Pro" }],
+        });
+      },
+      platform: "darwin",
+    })).toBe("MacBook Pro");
+  });
+
+  test("falls back to the macOS hardware model identifier", () => {
+    expect(readDesktopDeviceModel({
+      execFileSync: (command, args) => {
+        if (command === "ioreg") throw new Error("ioreg unavailable");
+        if (command === "system_profiler") throw new Error("system_profiler unavailable");
         expect(command).toBe("sysctl");
         expect(args).toEqual(["-n", "hw.model"]);
         return "Mac16,7\n";

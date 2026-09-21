@@ -18,11 +18,13 @@ bun run release -- \
   --label enhancement \
   --change-en "Run required release checks in parallel." \
   --change-zh "并行执行发布所需检查。" \
+  --change-locale "ja:必要なリリースチェックを並列実行します。" \
   --change-commit "abcdef1"
 ```
 
-多项变化需要按组重复传入 `--change-en`、`--change-zh` 和
-`--change-commit`。一项变化可以关联多个以逗号分隔的提交：
+多项变化需要按组重复传入 `--change-en`、`--change-zh`、
+`--change-locale ja:` 和 `--change-commit`。App Store 列表含日文，因此必须提供
+日文 What’s New。一项变化可以关联多个以逗号分隔的提交：
 
 ```bash
 --change-commit "abcdef1,1234567"

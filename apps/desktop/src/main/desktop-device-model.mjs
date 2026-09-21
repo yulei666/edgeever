@@ -6,6 +6,36 @@ const trimModel = (value) => {
   return text || null;
 };
 
+const parseIoregQuotedProperty = (output, key) => {
+  const match = String(output ?? "").match(new RegExp(`"${key}"\\s*=\\s*(?:<"([^"]+)">|"([^"]+)")`));
+  return trimModel(match?.[1] || match?.[2]);
+};
+
+const readDarwinMarketingName = (execFile) => {
+  try {
+    const productTree = execFile("ioreg", ["-p", "IODeviceTree", "-n", "product", "-rd1"], {
+      encoding: "utf8",
+      timeout: 2_000,
+    });
+    const productName = parseIoregQuotedProperty(productTree, "product-name");
+    if (productName) return productName;
+  } catch {
+    // Older Macs may not expose the device-tree product node.
+  }
+  try {
+    const profile = JSON.parse(execFile("system_profiler", ["SPHardwareDataType", "-json"], {
+      encoding: "utf8",
+      timeout: 5_000,
+    }));
+    const hardware = Array.isArray(profile?.SPHardwareDataType) ? profile.SPHardwareDataType[0] : null;
+    const machineName = trimModel(hardware?.machine_name);
+    if (machineName) return machineName;
+  } catch {
+    // system_profiler is a compatibility fallback for machines without IOKit product-name.
+  }
+  return null;
+};
+
 export const readDesktopDeviceModel = ({
   execFileSync: execFile = execFileSync,
   platform = process.platform,
@@ -13,7 +43,9 @@ export const readDesktopDeviceModel = ({
 } = {}) => {
   try {
     if (platform === "darwin") {
-      return trimModel(execFile("sysctl", ["-n", "hw.model"], { encoding: "utf8", timeout: 2_000 }));
+      // hw.model is a board identifier (Mac16,11); product-name is the user-facing model.
+      return readDarwinMarketingName(execFile)
+        || trimModel(execFile("sysctl", ["-n", "hw.model"], { encoding: "utf8", timeout: 2_000 }));
     }
     if (platform === "win32") {
       return trimModel(execFile("powershell.exe", [

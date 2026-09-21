@@ -24,7 +24,8 @@ import {
   ListTodo,
   Pilcrow,
   Quote,
-  Table2,
+  Sigma,
+  Table,
 } from "lucide-react";
 import {
   Command,
@@ -53,6 +54,8 @@ export type SlashCommandId =
   | "divider"
   | "fold"
   | "table"
+  | "inline-math"
+  | "block-math"
   | "current-date"
   | "current-time"
   | "current-date-time"
@@ -76,6 +79,7 @@ export type SlashCommandActions = {
   openAttachmentPicker: () => void;
   openExternalLinkPicker: () => void;
   openNoteLinkPicker: () => void;
+  openMathFormula: (kind: "inline" | "block", range?: { from: number; to: number }) => void;
 };
 
 export type SlashCommandItem = {
@@ -119,7 +123,9 @@ export const createSlashCommandItems = (labels: SlashCommandLabels): SlashComman
   { id: "code-block", command: "code", group: "basic", icon: Braces, label: labels.items["code-block"], keywords: ["代码"] },
   { id: "divider", command: "divider", group: "insert", icon: BetweenHorizontalStart, label: labels.items.divider, keywords: ["rule", "分割", "分隔"] },
   { id: "fold", command: "fold", group: "insert", icon: ChevronsDownUp, label: labels.items.fold, keywords: ["collapse", "spoiler", "折叠", "折りたたみ"] },
-  { id: "table", command: "table", group: "insert", icon: Table2, label: labels.items.table, keywords: ["表格"] },
+  { id: "table", command: "table", group: "insert", icon: Table, label: labels.items.table, keywords: ["表格"] },
+  { id: "inline-math", command: "math", group: "insert", icon: Sigma, label: labels.items["inline-math"], keywords: ["latex", "formula", "katex", "公式", "数学", "数式"] },
+  { id: "block-math", command: "equation", group: "insert", icon: Sigma, label: labels.items["block-math"], keywords: ["latex", "formula", "display", "katex", "块级公式", "独立公式", "数式"] },
   { id: "attachment", command: "upload", group: "insert", icon: FileUp, label: labels.items.attachment, keywords: ["file", "attachment", "文件", "上传", "附件"] },
   { id: "note-link", command: "note", group: "insert", icon: Link, label: labels.items["note-link"], keywords: ["link", "memo", "笔记", "引用"] },
   { id: "external-link", command: "link", group: "insert", icon: Link, label: labels.items["external-link"], keywords: ["url", "web", "链接", "网址"] },
@@ -248,6 +254,14 @@ const runSlashCommand = ({
     case "divider": chain.setHorizontalRule().run(); break;
     case "fold": chain.setDetails().run(); break;
     case "table": chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+    case "inline-math":
+      chain.run();
+      actions.openMathFormula("inline", { from: range.from, to: range.from });
+      break;
+    case "block-math":
+      chain.run();
+      actions.openMathFormula("block", { from: range.from, to: range.from });
+      break;
     case "current-date": chain.insertContent(formatCurrentDate(new Date())).run(); break;
     case "current-time": chain.insertContent(formatCurrentTime(new Date())).run(); break;
     case "current-date-time": chain.insertContent(formatCurrentDateTime(new Date())).run(); break;

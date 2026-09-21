@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { formatClientDisplaySize, formatDevicePixelRatio, getClientDisplaySizeParts } from "./client-display-size";
+import { formatClientDisplaySize, formatDevicePixelRatio, getClientDisplaySizeParts, toDevicePixelScreenSize } from "./client-display-size";
 
-const chineseTemplate = "{{screen}} @{{dpr}}x（窗口 {{windowSize}}）";
-const englishTemplate = "{{screen}} @{{dpr}}x (window {{windowSize}})";
+const template = "{{screen}} @{{dpr}}x";
 
 describe("client display size formatting", () => {
   test("exposes interpolation parts for localized system info", () => {
@@ -10,30 +9,23 @@ describe("client display size formatting", () => {
       devicePixelRatio: 2,
       screenHeight: 982,
       screenWidth: 1512,
-      windowHeight: 800,
-      windowWidth: 1280,
     })).toEqual({
       dpr: "2",
       screen: "1512×982",
-      windowSize: "1280×800",
     });
   });
 
-  test("formats screen size, device pixel ratio, and window size", () => {
+  test("formats screen size and device pixel ratio", () => {
     expect(formatClientDisplaySize({
       devicePixelRatio: 2,
       screenHeight: 982,
       screenWidth: 1512,
-      windowHeight: 800,
-      windowWidth: 1280,
-    }, chineseTemplate)).toBe("1512×982 @2x（窗口 1280×800）");
+    }, template)).toBe("1512×982 @2x");
     expect(formatClientDisplaySize({
       devicePixelRatio: 1.25,
       screenHeight: 1080,
       screenWidth: 1920,
-      windowHeight: 900,
-      windowWidth: 1440,
-    }, englishTemplate)).toBe("1920×1080 @1.25x (window 1440×900)");
+    }, template)).toBe("1920×1080 @1.25x");
   });
 
   test("rounds css pixels and trims integer device pixel ratios", () => {
@@ -44,9 +36,24 @@ describe("client display size formatting", () => {
       devicePixelRatio: 2.0000001,
       screenHeight: 981.4,
       screenWidth: 1511.6,
-      windowHeight: 799.6,
-      windowWidth: 1279.4,
-    }, chineseTemplate)).toBe("1512×981 @2x（窗口 1279×800）");
+    }, template)).toBe("1512×981 @2x");
+  });
+
+  test("scales CSS screen size to device pixels", () => {
+    expect(toDevicePixelScreenSize({
+      devicePixelRatio: 2,
+      screenHeight: 1080,
+      screenWidth: 1920,
+    })).toEqual({
+      devicePixelRatio: 2,
+      screenHeight: 2160,
+      screenWidth: 3840,
+    });
+    expect(formatClientDisplaySize(toDevicePixelScreenSize({
+      devicePixelRatio: 2,
+      screenHeight: 1080,
+      screenWidth: 1920,
+    }), template)).toBe("3840×2160 @2x");
   });
 
   test("returns null when a display metric is missing", () => {
@@ -54,9 +61,7 @@ describe("client display size formatting", () => {
       devicePixelRatio: 2,
       screenHeight: 982,
       screenWidth: 0,
-      windowHeight: 800,
-      windowWidth: 1280,
-    }, chineseTemplate)).toBeNull();
+    }, template)).toBeNull();
     expect(formatDevicePixelRatio(0)).toBeNull();
     expect(formatDevicePixelRatio(Number.NaN)).toBeNull();
   });
