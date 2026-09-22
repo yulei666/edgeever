@@ -1225,6 +1225,10 @@ export const enUS = {
     browserMode: "Browser",
     unknown: "Unknown",
     copy: "Copy info",
+    copySucceeded: "System information copied to the clipboard.",
+    copyFailed: "Copy failed. Check clipboard permissions and try again.",
+    copyFieldLabel: "Field",
+    copyValueLabel: "Value",
     clientAheadOfInstanceByPlatform: {
       cloudflare: "This client is newer than the connected cloud instance. You can wait for the daily automatic instance update, or run the Update deployed EdgeEver workflow.",
       docker: "This client is newer than the connected cloud instance. You can wait for the daily automatic instance update, or run ./update.sh in the install directory (default ~/edgeever).",

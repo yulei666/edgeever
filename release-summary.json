@@ -1,20 +1,23 @@
 {
-  "version": "1.81.0",
+  "version": "1.82.0",
   "changes": {
     "en-US": [
-      "Create richer architecture diagrams with new AI components and hardware icons, more reliable insertion and diagram-kind handling, and refined architecture and flowchart visuals.",
-      "Explore improved public Demo examples for flowcharts, mind maps, and architecture diagrams, with corrected routing, nesting, and saved automatic layouts.",
-      "Open Android GitHub update downloads through a compatible external destination."
+      "Improve diagram connector routing and label clarity, especially for architecture and diagonal edges.",
+      "Remember expanded notebook folders across sessions.",
+      "Format copied system information more clearly and confirm when it has been copied.",
+      "Localize plugin marketplace metadata and source official plugin details from release metadata."
     ],
     "zh-CN": [
-      "架构图新增 AI 组件与硬件图标，节点插入和图表类型识别更可靠，并优化架构图与流程图的视觉表现。",
-      "公开 Demo 的流程图、思维导图和架构图示例全面更新，并修正连线路由、层级结构与自动布局保存。",
-      "Android 客户端的 GitHub 更新下载现可通过兼容的外部目标正常打开。"
+      "改进图表连接线的路由与标签清晰度，尤其优化架构图和斜向连线。",
+      "在不同会话之间记住笔记本文件夹的展开状态。",
+      "优化复制后的系统信息格式，并在复制成功后提供明确反馈。",
+      "本地化插件市场元数据，并从 Release 元数据获取官方插件信息。"
     ],
     "ja": [
-      "アーキテクチャ図に AI コンポーネントとハードウェアアイコンを追加し、ノード挿入と図種別の処理を安定化して、アーキテクチャ図とフローチャートの表示を改善しました。",
-      "公開デモのフローチャート、マインドマップ、アーキテクチャ図の例を刷新し、配線、階層構造、自動レイアウトの保存を修正しました。",
-      "Android クライアントで GitHub の更新ダウンロードを互換性のある外部アプリから正しく開けるようになりました。"
+      "図表のコネクター経路とラベルの見やすさを改善し、特にアーキテクチャ図と斜めのエッジを最適化しました。",
+      "セッションをまたいでノートブックフォルダーの展開状態を記憶するようになりました。",
+      "コピーしたシステム情報を読みやすく整形し、コピー完了時に明確なフィードバックを表示します。",
+      "プラグインマーケットプレイスのメタデータをローカライズし、公式プラグイン情報をリリースメタデータから取得するようにしました。"
     ]
   }
 }

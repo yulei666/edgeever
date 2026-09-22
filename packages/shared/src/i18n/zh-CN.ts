@@ -1225,6 +1225,10 @@ export const zhCN = {
     browserMode: "浏览器",
     unknown: "未知",
     copy: "复制信息",
+    copySucceeded: "系统信息已复制到剪贴板。",
+    copyFailed: "复制失败，请检查剪贴板权限后重试。",
+    copyFieldLabel: "项目",
+    copyValueLabel: "信息",
     clientAheadOfInstanceByPlatform: {
       cloudflare: "当前客户端版本高于云端实例。可等待每天自动更新，或手动运行 Update deployed EdgeEver 工作流。",
       docker: "当前客户端版本高于云端实例。可等待每天自动更新，或在安装目录执行 ./update.sh（默认 ~/edgeever）。",

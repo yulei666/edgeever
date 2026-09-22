@@ -1225,6 +1225,10 @@ export const ja = {
     browserMode: "ブラウザ",
     unknown: "不明",
     copy: "情報をコピー",
+    copySucceeded: "システム情報をクリップボードにコピーしました。",
+    copyFailed: "コピーに失敗しました。クリップボードの権限を確認して、もう一度お試しください。",
+    copyFieldLabel: "項目",
+    copyValueLabel: "情報",
     clientAheadOfInstanceByPlatform: {
       cloudflare: "このクライアントは接続中のクラウドインスタンスより新しいです。毎日の自動インスタンス更新を待つか、Update deployed EdgeEver ワークフローを実行できます。",
       docker: "このクライアントは接続中のクラウドインスタンスより新しいです。毎日の自動インスタンス更新を待つか、インストールディレクトリで ./update.sh を実行できます（既定は ~/edgeever）。",
