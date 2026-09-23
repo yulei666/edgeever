@@ -23,6 +23,7 @@ interface EdgeEverDesktopBridge {
   getSessionToken(): string;
   copyText(value: string): Promise<boolean>;
   copyHtml(html: string, plainText: string): Promise<boolean>;
+  copyImage(bytes: Uint8Array): Promise<boolean>;
   setSessionToken(value: string): Promise<{ stored: boolean }>;
   clearSessionToken(): Promise<{ stored: false }>;
   publicNetworkFetch(requestId: string, input: import("@edgeever/shared").PluginPublicFetchRequest): Promise<import("@edgeever/shared").PluginPublicFetchResponse>;

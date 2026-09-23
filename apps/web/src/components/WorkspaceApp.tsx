@@ -46,7 +46,7 @@ import {
 } from "@/lib/mobile-editor";
 import { cn } from "@/lib/utils";
 import { isBrowserOffline, isBrowserOnline } from "@/lib/network-status";
-import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, getNotebookDescendantIds, markdownToDoc, parseDiagramDocument, parseTableDocument, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown, type NoteCreateKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
+import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, getNotebookDescendantIds, hasTableDocumentMarker, markdownToDoc, parseDiagramDocument, parseTableDocument, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown, type NoteCreateKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
 import { toggleMobileMemoSelection } from "@edgeever/shared/mobile-ui";
 import type {
   Pane,
@@ -1619,7 +1619,7 @@ export const WorkspaceApp = ({
     : null;
   const selectedMemo = memoQuery.data?.memo ?? cachedSelectedMemo;
   const selectedDiagram = parseDiagramDocument(selectedMemo?.contentMarkdown);
-  const selectedTable = parseTableDocument(selectedMemo?.contentMarkdown);
+  const selectedTableNote = hasTableDocumentMarker(selectedMemo?.contentMarkdown);
   const desktopNotebookSidebarCollapsed = Boolean(isDesktop && notebookSidebarCollapsed);
   const desktopFocusModeActive = Boolean(
     isDesktop && desktopFocusMode && rightView === "editor" && selectedMemo && !memoSelectionModeActive
@@ -3354,7 +3354,7 @@ export const WorkspaceApp = ({
                           onOpenExecutionCenter={handleOpenExecutionCenter}
                           
                         />
-                      ) : selectedMemo && selectedTable ? (
+                      ) : selectedMemo && selectedTableNote ? (
                         <TableEditorPane
                           key={selectedMemo.id}
                           memo={selectedMemo}

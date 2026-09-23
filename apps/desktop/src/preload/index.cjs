@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
   getSessionToken: () => ipcRenderer.sendSync("desktop:session-token-sync"),
   copyText: (value) => ipcRenderer.invoke("desktop:copy-text", value),
   copyHtml: (html, plainText) => ipcRenderer.invoke("desktop:copy-html", { html, plainText }),
+  copyImage: (bytes) => ipcRenderer.invoke("desktop:copy-image", bytes),
   setSessionToken: (value) => ipcRenderer.invoke("desktop:set-session-token", value),
   clearSessionToken: () => ipcRenderer.invoke("desktop:clear-session-token"),
   publicNetworkFetch: (requestId, input) => ipcRenderer.invoke("desktop:public-network-fetch", requestId, input),

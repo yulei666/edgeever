@@ -1,5 +1,5 @@
 import { deflateRawSync } from "node:zlib";
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
@@ -130,5 +130,31 @@ describe("WeChat share handoff", () => {
     await controller.importFromProtocolUrl(`edgeever://wechat-import?path=${encodeURIComponent(outside)}`);
     expect(sent[0]).toEqual({ ok: false, reason: "failed" });
     expect((await readFile(outside)).toString()).toBe("secret");
+  });
+
+  test("picks up a completed share without a protocol URL and ignores a duplicate URL", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const zipPath = join(batch, "聊天记录.zip");
+    const partialPath = `${zipPath}.partial`;
+    await writeFile(partialPath, zipOf("聊天记录.txt", "·鱼\n2026年9月22日 22:15\n你好\n", "附件/readme.txt", "hello"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importPending();
+    expect(sent).toHaveLength(0);
+    await rename(partialPath, zipPath);
+    const url = `edgeever://wechat-import?path=${encodeURIComponent(zipPath)}`;
+    await Promise.all([controller.importPending(), controller.importFromProtocolUrl(url)]);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].ok).toBe(true);
+    await controller.importFromProtocolUrl(url);
+    expect(sent).toHaveLength(1);
   });
 });

@@ -11,6 +11,7 @@ import { resourceRequestHeaders } from "./resource-request.mjs";
 import { downloadContentDispositionFromRequest, isSafeResourceId, parseByteRangeHeader, resourceIdFromRequest } from "./resource-url.mjs";
 import { isSupportedAssociatedFile } from "./file-association.mjs";
 import { createWeChatShareController } from "./wechat-share-import.mjs";
+import { enableMacShareExtension } from "./share-extension-registration.mjs";
 import { accountDataDirectory, accountScopeKey } from "./account-scope.mjs";
 import { rotateDiagnosticLog } from "./diagnostic-log.mjs";
 import { restrictDirectory, restrictFile } from "./file-permissions.mjs";
@@ -29,7 +30,7 @@ import { userDataDirectoryFromArguments } from "./user-data-directory.mjs";
 import { isAllowedPrintPreviewUrl } from "./window-open-policy.mjs";
 import { showWindow } from "./window-visibility.mjs";
 import { trayIconPath } from "./tray-icon.mjs";
-import { writeRichClipboard, writeTextClipboard } from "./clipboard-write.mjs";
+import { writeImageClipboard, writeRichClipboard, writeTextClipboard } from "./clipboard-write.mjs";
 import { captureScreenToNote, createScreenshotCaptureGuard, screenshotImportIpcPayload, writeScreenshotTempPath } from "./screenshot-capture.mjs";
 import { LocalDataResetError, scheduleMacLocalDataReset } from "./local-data-reset.mjs";
 import { buildDesktopDiagnosticIssueUrl, normalizeDesktopDiagnostic } from "./desktop-diagnostics.mjs";
@@ -1530,6 +1531,7 @@ const startApplication = async () => {
   ipcMain.on("desktop:recovered-after-abnormal-exit-sync", (event) => { event.returnValue = recoveredAfterAbnormalExit; });
   ipcMain.handle("desktop:copy-text", (_event, value) => writeTextClipboard(clipboard, value));
   ipcMain.handle("desktop:copy-html", (_event, input) => writeRichClipboard(clipboard, ClipboardItem, input));
+  ipcMain.handle("desktop:copy-image", (_event, bytes) => writeImageClipboard(clipboard, ClipboardItem, bytes));
   ipcMain.handle("desktop:set-session-token", async (_event, value) => {
     await saveDesktopSessionToken(value);
     return { stored: Boolean(desktopSessionToken) };
@@ -1819,10 +1821,27 @@ const startApplication = async () => {
   // user-visible critical path so the first installed launch opens promptly.
   await ejectMountedMacInstallers();
   await confirmMacInstallation();
+  void enableMacShareExtension({
+    platform: process.platform,
+    packaged: app.isPackaged,
+    executablePath: process.execPath,
+    exists: existsSync,
+    execFile,
+  }).then((result) => {
+    if (result.enabled) void writeDiagnostic("share-extension.enabled");
+  }).catch((error) => {
+    void writeDiagnostic("share-extension.enable-failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  });
   configureAutoUpdater();
   handleOpenTarget(process.argv);
   protocolUrlsReady = true;
   while (pendingProtocolUrls.length > 0) handleProtocolUrl(pendingProtocolUrls.shift());
+  if (process.platform === "darwin" && app.isPackaged) {
+    void wechatShare().importPending();
+    setInterval(() => { void wechatShare().importPending(); }, 2_000).unref();
+  }
   app.on("activate", () => {
     if (!showWindow(mainWindow)) void createWindow();
     void checkForDesktopUpdate("activate");

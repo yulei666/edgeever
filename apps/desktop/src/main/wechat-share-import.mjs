@@ -73,6 +73,8 @@ export const createWeChatShareController = ({
   writeDiagnostic = () => {},
 }) => {
   const sessions = new Map();
+  const inFlightPaths = new Set();
+  const completedPaths = new Set();
 
   const finish = async (importId) => {
     if (!SAFE_ID.test(importId || "")) return;
@@ -96,7 +98,8 @@ export const createWeChatShareController = ({
 
   const importFromProtocolUrl = async (value) => {
     const requestedPath = wechatImportFilePath(value);
-    if (!requestedPath) return;
+    if (!requestedPath || inFlightPaths.has(requestedPath) || completedPaths.has(requestedPath)) return;
+    inFlightPaths.add(requestedPath);
     onActivity();
     const downloads = downloadsPath();
     let zipPath = null;
@@ -130,6 +133,7 @@ export const createWeChatShareController = ({
       }
       sessions.set(importId, { directory, media });
       preparedDirectory = null;
+      completedPaths.add(requestedPath);
       sendToRenderer({
         ok: true,
         importId,
@@ -145,8 +149,25 @@ export const createWeChatShareController = ({
       void writeDiagnostic("wechat-import.rejected", { reason });
     } finally {
       await removeImportedZip(zipPath, downloads);
+      inFlightPaths.delete(requestedPath);
     }
   };
 
-  return { importFromProtocolUrl, readMedia, finish };
+  const importPending = async () => {
+    const root = incomingDirectory(downloadsPath());
+    const batches = await readdir(root, { withFileTypes: true }).catch(() => []);
+    for (const batch of batches) {
+      if (!batch.isDirectory()) continue;
+      const directory = join(root, batch.name);
+      const files = await readdir(directory, { withFileTypes: true }).catch(() => []);
+      for (const file of files) {
+        if (!file.isFile() || !file.name.toLowerCase().endsWith(".zip")) continue;
+        const url = new URL("edgeever://wechat-import");
+        url.searchParams.set("path", join(directory, file.name));
+        await importFromProtocolUrl(url.href);
+      }
+    }
+  };
+
+  return { importFromProtocolUrl, importPending, readMedia, finish };
 };
