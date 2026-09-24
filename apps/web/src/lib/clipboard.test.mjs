@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { copyHtmlToClipboard, copyImageBlobToClipboard, copyTextToClipboard } from "./clipboard.ts";
+import { copyHtmlToClipboard, copyImageBlobToClipboard, copyImageUrlToClipboard, copyTextToClipboard } from "./clipboard.ts";
 
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
@@ -184,6 +184,54 @@ describe("copyImageBlobToClipboard", () => {
     expect(writes).toHaveLength(1);
     const payload = writes[0][0].data["image/png"];
     expect(payload).toBeInstanceOf(Promise);
+    await expect(payload).resolves.toBe(png);
+    await expect(pending).resolves.toBe(true);
+  });
+
+  test("starts the image-url write during the click, before the image response arrives", async () => {
+    const writes = [];
+    const jpeg = new Blob([Uint8Array.from([1, 2, 3])], { type: "image/jpeg" });
+    const png = new Blob([Uint8Array.from([9])], { type: "image/png" });
+    let resolveFetch = () => {};
+    globalThis.window = {};
+    installClipboardItem();
+    Object.defineProperty(globalThis, "navigator", {
+      configurable: true,
+      value: { clipboard: { write: async (items) => writes.push(items) } },
+    });
+    globalThis.fetch = () => new Promise((resolve) => {
+      resolveFetch = () => resolve({ ok: true, blob: async () => jpeg });
+    });
+    globalThis.document = {
+      createElement: (tag) => {
+        if (tag === "img") {
+          const image = {
+            naturalWidth: 1,
+            naturalHeight: 1,
+            set src(_value) {
+              queueMicrotask(() => image.onload?.());
+            },
+          };
+          return image;
+        }
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({ drawImage() {} }),
+          toBlob: (callback) => callback(png),
+        };
+      },
+    };
+    globalThis.URL = {
+      createObjectURL: () => "blob:image",
+      revokeObjectURL() {},
+    };
+
+    const pending = copyImageUrlToClipboard("/api/v1/resources/res_image/blob");
+    expect(writes).toHaveLength(1);
+    const payload = writes[0][0].data["image/png"];
+    expect(payload).toBeInstanceOf(Promise);
+    resolveFetch();
     await expect(payload).resolves.toBe(png);
     await expect(pending).resolves.toBe(true);
   });

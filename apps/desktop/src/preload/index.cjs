@@ -67,6 +67,8 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
   completeStagedResource: (id) => ipcRenderer.invoke("desktop:stage-resource-complete", id),
   abortStagedResource: (id) => ipcRenderer.invoke("desktop:stage-resource-abort", id),
   listStagedResources: () => ipcRenderer.invoke("desktop:list-staged-resources"),
+  listStagedResourceAliases: (memoId) => ipcRenderer.invoke("desktop:list-staged-resource-aliases", memoId),
+  recordStagedResourceAlias: (id, uploadedUrl) => ipcRenderer.invoke("desktop:record-staged-resource-alias", id, uploadedUrl),
   remapStagedResourceMemoIds: (mappings) => ipcRenderer.invoke("desktop:remap-staged-resource-memo-ids", mappings),
   readStagedResource: (id) => ipcRenderer.invoke("desktop:read-staged-resource", id),
   readStagedResourcePart: (id, start, length) => ipcRenderer.invoke("desktop:read-staged-resource-part", id, start, length),
@@ -108,7 +110,8 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
     mimeType: file.mimeType,
     bytes: normalizeIpcBytes(file.bytes),
   })),
-  finishWeChatImport: (importId) => ipcRenderer.invoke("desktop:finish-wechat-import", importId),
+  finishWeChatImport: (importId, success) => ipcRenderer.invoke("desktop:finish-wechat-import", importId, success),
+  retryWeChatImport: (importId) => ipcRenderer.invoke("desktop:retry-wechat-import", importId),
   onImportWeChatChat: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on("desktop:import-wechat-chat", listener);

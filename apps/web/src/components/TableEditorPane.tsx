@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { ChevronLeft, Download, Form, Paperclip, Plus, RefreshCw, TableProperties, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, Copy, Download, Form, Paperclip, Plus, RefreshCw, TableProperties, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   addTableField,
@@ -49,7 +49,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
-import { toDesktopResourceUrl } from "@/lib/desktop-resources";
+import { copyImageUrlToClipboard } from "@/lib/clipboard";
+import { toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { EDITOR_LOCAL_SAVE_DELAY_MS } from "@/lib/app-helpers";
 import { createLocalEditSession } from "@/components/editor/editor-pane-helpers";
 import { isLocalMemoId } from "@/lib/local-mirror";
@@ -160,6 +161,16 @@ const FieldHeader = ({
 
 const attachmentItems = (value: TableCellValue): TableAttachment[] => Array.isArray(value) ? value : [];
 
+const isImageAttachment = (item: TableAttachment) => item.mimeType.toLowerCase().startsWith("image/");
+
+const downloadTableAttachment = (href: string, filename: string) => {
+  const anchor = document.createElement("a");
+  anchor.href = toDesktopResourceDownloadUrl(href, filename);
+  anchor.download = filename;
+  anchor.rel = "noreferrer";
+  anchor.click();
+};
+
 const AttachmentCell = ({
   field,
   record,
@@ -181,10 +192,32 @@ const AttachmentCell = ({
 }) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const copyTimer = useRef<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const items = attachmentItems(record.cells[field.id] ?? null);
   const limitReached = items.length >= TABLE_ATTACHMENT_LIMIT;
+
+  useEffect(() => () => {
+    if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+  }, []);
+
+  const copyImage = async (href: string, resourceId: string) => {
+    setCopyError(null);
+    const copied = await copyImageUrlToClipboard(href);
+    if (!copied) {
+      setCopiedId(null);
+      setCopyError(t("structuredTable.copyImageFailed"));
+      return;
+    }
+    setCopiedId(resourceId);
+    if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    copyTimer.current = window.setTimeout(() => {
+      setCopiedId((current) => current === resourceId ? null : current);
+    }, 2000);
+  };
 
   const uploadFiles = async (files: FileList | null) => {
     if (!files?.length || readOnly) return;
@@ -214,19 +247,74 @@ const AttachmentCell = ({
   };
 
   return (
-    <div className="flex min-w-48 flex-col gap-1">
+    <div className="flex min-w-36 flex-col gap-1 px-2">
       {items.map((item) => {
         const href = toDesktopResourceUrl(tableAttachmentUrl(item.resourceId));
-        const image = item.mimeType.startsWith("image/");
+        const image = isImageAttachment(item);
+        const openLabel = t("structuredTable.openAttachment", { name: item.filename });
+        const copied = copiedId === item.resourceId;
         return (
-          <div key={item.resourceId} className="flex items-center gap-1">
-            {image ? <img src={href} alt="" className="h-8 w-8 rounded object-cover" /> : <Paperclip className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />}
-            <a href={href} className="min-w-0 flex-1 truncate text-sm text-emerald-700 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">{item.filename}</a>
+          <div key={item.resourceId} className="group/attachment flex items-center gap-1">
+            {image ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-8 w-8 shrink-0 overflow-hidden rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                    aria-label={openLabel}
+                  >
+                    <img src={href} alt="" className="h-full w-full object-cover" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>{openLabel}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <>
+                <Paperclip className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                <a href={href} className="min-w-0 flex-1 truncate text-sm text-emerald-700 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">{item.filename}</a>
+              </>
+            )}
+            <div className="hidden items-center gap-1 group-hover/attachment:flex group-focus-within/attachment:flex">
+              {image ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label={copied ? t("structuredTable.imageCopied") : t("structuredTable.copyImage")}
+                      onClick={() => { void copyImage(href, item.resourceId); }}
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{copied ? t("structuredTable.imageCopied") : t("structuredTable.copyImage")}</TooltipContent>
+                </Tooltip>
+              ) : null}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label={t("structuredTable.downloadAttachment", { name: item.filename })}
+                    onClick={() => downloadTableAttachment(href, item.filename)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("structuredTable.downloadAttachment", { name: item.filename })}</TooltipContent>
+              </Tooltip>
+            </div>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-8 w-8"
               aria-label={t("structuredTable.removeAttachment", { name: item.filename })}
               disabled={readOnly}
               onClick={() => onRemove(item.resourceId)}
@@ -249,7 +337,7 @@ const AttachmentCell = ({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 justify-start px-1 text-xs"
+        className="h-8 justify-start px-0 text-xs"
         disabled={readOnly || uploading || limitReached}
         aria-label={limitReached ? t("structuredTable.attachmentLimit") : t("structuredTable.addAttachment")}
         onClick={() => inputRef.current?.click()}
@@ -258,6 +346,7 @@ const AttachmentCell = ({
         {uploading ? t("structuredTable.uploading") : limitReached ? t("structuredTable.attachmentLimit") : t("structuredTable.addAttachment")}
       </Button>
       {uploadError ? <p className="text-xs text-rose-600">{uploadError}</p> : null}
+      {copyError ? <p className="text-xs text-rose-600" role="alert">{copyError}</p> : null}
     </div>
   );
 };
@@ -882,7 +971,7 @@ export const TableEditorPane = ({
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="border-b border-slate-100">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-1 align-middle">
+                  <td key={cell.id} className="px-2 py-1 align-top">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

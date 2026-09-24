@@ -1,20 +1,32 @@
 {
-  "version": "1.84.0",
+  "version": "1.85.0",
   "changes": {
     "en-US": [
-      "Structured tables can attach files. Files stay in object storage, and the table keeps only the reference. A public form link adds one row per response and does not show existing records. Turning on accept-responses creates the form and shows the link; the title, fields, and password save on their own. While the form is collecting, the toolbar button turns green. An open table can refresh to load new submissions, and refresh stays off while the grid has unsaved edits. Self-hosted instances need this version before attachments and the public form work.",
-      "On macOS, a newly installed WeChat share extension stays off until the app enables it for the current user at launch and opens it from the system share sheet. EdgeEver then appears in WeChat's share menu.",
-      "Note sharing stays available while reading is locked, including the phone reading view. Phones get a header button that opens the existing share link. Copying a note as an image writes the image through the desktop main process. If that copy fails, the app tells you to download it instead of doing nothing."
+      "The interface can use its own device-local font, separate from the note font. Notes and public shares can also use Zhuque Fangsong or LXGW Neo ZhiSong.",
+      "In a structured table, click an image thumbnail to open it. Copy and download appear on hover, and copy places the image itself on the clipboard.",
+      "Plugin settings are saved on this device as soon as they change. Turning a scheduled digest on and setting its time no longer drops one of the two updates.",
+      "WeChat chat import keeps the archive until the note is saved, recovers compressed images, uses small images by default, and adds a time to generic chat titles.",
+      "Images staged for a note stay available while a draft still references them, and desktop links to those staged files keep working.",
+      "The login screen leaves the username blank except on the public demo.",
+      "Sidebar shortcuts use a tag icon for tags and a paperclip for attachments."
     ],
     "zh-CN": [
-      "多维表格可以给记录添加附件。附件存在对象存储里，表格只保存引用。公开填写链接每提交一次就新增一行，不会展示已有记录。打开接受回复就会创建表单并给出链接，标题、字段和密码会自动保存。正在收集时，工具栏按钮会变绿。打开的表格可以刷新以载入新提交；表格里还有未保存的修改时，刷新保持不可用。自建实例需要升级到这一版后，附件和公开表单才会生效。",
-      "macOS 上，新安装的微信分享扩展默认是关闭的。这一版会在启动时为当前用户启用它，并从系统分享入口打开，微信的分享菜单里才会出现 EdgeEver。",
-      "阅读锁定时，以及手机的阅读视图里，仍然可以打开分享。手机顶栏有按钮打开原来的分享链接。把笔记复制成图片时，桌面端会通过主进程写入剪贴板；复制失败会提示改为下载，而不是没有任何反应。"
+      "界面可以单独使用本机字体，不影响笔记正文。笔记和公开分享还可以使用朱雀仿宋或霞鹜新致宋。",
+      "多维表格中点击图片缩略图即可打开。复制和下载在悬停时出现，复制会把图片本身放到剪贴板。",
+      "插件设置在本机一改即存。开启定时摘要并设置时间时，不会再丢掉其中一次更新。",
+      "微信聊天记录导入会把压缩包保留到笔记保存完成，并恢复被压缩的图片。导入图片默认使用小图，没有具体标题的聊天会带上时间。",
+      "草稿仍引用暂存图片时，这些图片会保留。桌面端指向这些暂存文件的链接也会继续可用。",
+      "除公开 Demo 外，登录页的用户名默认为空。",
+      "侧栏快捷入口中，标签使用标签图标，附件使用回形针图标。"
     ],
     "ja": [
-      "構造化テーブルにファイルを添付できます。ファイルはオブジェクトストレージに保存され、テーブルには参照だけが残ります。公開フォームのリンクから回答すると1行が追加され、既存の記録は表示されません。回答の受付をオンにするとフォームが作られてリンクが表示され、タイトル、項目、パスワードは自動で保存されます。受付中はツールバーのボタンが緑になります。開いているテーブルは更新して新しい回答を読み込め、未保存の編集がある間は更新できません。セルフホストのインスタンスは、このバージョンに上げてから添付ファイルと公開フォームが使えます。",
-      "macOS では、新しくインストールした WeChat 共有拡張機能は初期状態でオフです。この版は起動時に現在のユーザー向けに有効化し、システムの共有シートから開くので、WeChat の共有メニューに EdgeEver が表示されます。",
-      "閲覧ロック中でも、スマホの閲覧画面からでもノートを共有できます。スマホではヘッダーのボタンから既存の共有リンクを開きます。ノートを画像としてコピーすると、デスクトップはメインプロセス経由でクリップボードに書き込みます。コピーに失敗したときは、無反応ではなくダウンロードするよう案内します。"
+      "画面のフォントをこの端末だけで選べ、ノート本文とは別になります。ノートと公開共有では朱雀仿宋と霞鹜新致宋も使えます。",
+      "多次元テーブルでは画像のサムネイルをクリックすると開きます。コピーとダウンロードはホバー時に表示され、コピーは画像そのものをクリップボードに置きます。",
+      "プラグイン設定はこの端末で変更した直後に保存されます。定期ダイジェストをオンにして時刻を設定しても、どちらかの更新が失われません。",
+      "WeChat のチャット取り込みはノートの保存まで書庫を残し、圧縮された画像を復元します。画像は既定で小さく、具体的な題のないチャット名には時刻が付きます。",
+      "下書きが参照している一時画像は残ります。デスクトップ上のその一時ファイルへのリンクも引き続き使えます。",
+      "公開デモ以外では、ログイン画面のユーザー名は空のままです。",
+      "サイドバーのショートカットは、タグにタグのアイコン、添付ファイルにクリップのアイコンを使います。"
     ]
   }
 }

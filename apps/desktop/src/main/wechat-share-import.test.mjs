@@ -1,5 +1,5 @@
 import { deflateRawSync } from "node:zlib";
-import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
@@ -110,9 +110,10 @@ describe("WeChat share handoff", () => {
     expect(sent[0].markdown).toContain("![微信图片_1.jpg](edgeever-wechat-media://m1)");
     const media = await controller.readMedia(sent[0].importId, "m1");
     expect(Buffer.from(media.bytes).toString()).toBe("jpeg");
+    expect((await stat(zipPath)).isFile()).toBe(true);
+    await controller.finish(sent[0].importId, true);
     await expect(stat(zipPath)).rejects.toThrow();
     await expect(stat(batch)).rejects.toThrow();
-    await controller.finish(sent[0].importId);
     await expect(readFile(join(temp, "edgeever-wechat-import", sent[0].importId, "m1.bin"))).rejects.toThrow();
   });
 
@@ -154,7 +155,77 @@ describe("WeChat share handoff", () => {
     await Promise.all([controller.importPending(), controller.importFromProtocolUrl(url)]);
     expect(sent).toHaveLength(1);
     expect(sent[0].ok).toBe(true);
+    expect((await stat(zipPath)).isFile()).toBe(true);
     await controller.importFromProtocolUrl(url);
     expect(sent).toHaveLength(1);
+    await controller.finish(sent[0].importId, false);
+    await controller.importPending();
+    expect(sent).toHaveLength(1);
+    expect(controller.retry(sent[0].importId)).toBe(true);
+    expect(sent).toHaveLength(2);
+    await controller.finish(sent[0].importId, true);
+    await expect(stat(zipPath)).rejects.toThrow();
+  });
+
+  test("keeps multiple old pending shares available across app restarts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const incoming = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME);
+    const old = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    for (const name of ["first", "second"]) {
+      const batch = join(incoming, name);
+      await mkdir(batch, { recursive: true });
+      const zipPath = join(batch, "聊天记录.zip");
+      await writeFile(zipPath, zipOf("聊天记录.txt", `·鱼\n2026年9月22日 22:15\n${name}\n`, "附件/readme.txt", "hello"));
+      await utimes(batch, old, old);
+    }
+    const prepared = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => prepared.push(payload),
+    });
+    await controller.importPending();
+    expect(prepared).toHaveLength(2);
+    await controller.finish(prepared[0].importId, false);
+    const resumed = [];
+    const restarted = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "new-temp"),
+      sendToRenderer: (payload) => resumed.push(payload),
+    });
+    await restarted.importPending();
+    expect(resumed).toHaveLength(2);
+    for (const name of ["first", "second"]) {
+      expect((await stat(join(incoming, name, "聊天记录.zip"))).isFile()).toBe(true);
+    }
+  });
+
+  test("finishing one zip keeps another zip in the same incoming batch", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    for (const name of ["first", "second"]) {
+      await writeFile(join(batch, `${name}.zip`), zipOf("聊天记录.txt", `·鱼\n2026年9月22日 22:15\n${name}\n`, "附件/readme.txt", "hello"));
+    }
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importPending();
+    expect(sent).toHaveLength(2);
+    const first = sent.find((payload) => payload.title === "first");
+    const second = sent.find((payload) => payload.title === "second");
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    await controller.finish(first.importId, true);
+    expect((await stat(join(batch, "second.zip"))).isFile()).toBe(true);
+    await controller.finish(second.importId, true);
+    await expect(stat(batch)).rejects.toThrow();
   });
 });
