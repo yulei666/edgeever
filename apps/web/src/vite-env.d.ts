@@ -139,6 +139,7 @@ interface EdgeEverDesktopBridge {
     | { requestId: string; type: "text-delta"; text: string }
     | { requestId: string; type: "reasoning"; text: string }
     | { requestId: string; type: "tool"; name: string; status: string; title?: string }
+    | { requestId: string; type: "image"; id: string; mediaType: string; base64: string }
     | { requestId: string; type: "done" }
     | { requestId: string; type: "error"; message: string }
   ) => void): () => void;

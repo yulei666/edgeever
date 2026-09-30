@@ -76,6 +76,13 @@ describe("shared memo editor header actions", () => {
     expect(densitySource).not.toContain("min-[1600px]:flex");
   });
 
+  test("cycles rich text and markdown from one toolbar button", () => {
+    expect(editorToolbarSource).toContain("const nextEditorViewMode = EDITOR_VIEW_MODES[activeEditorView === \"rich\" ? 1 : 0]");
+    expect(editorToolbarSource).toContain("onEditorViewChange(nextEditorViewMode.value)");
+    expect(editorToolbarSource).not.toContain("EDITOR_VIEW_MODES.map");
+    expect(editorToolbarSource).not.toContain('t("editorToolbar.viewMode")');
+  });
+
   test("aligns the note title, notebook row, and article on one reading gutter", () => {
     expect(editorSource).toContain("MEMO_EDITOR_READING_GUTTER_CLASS_NAME");
     expect(densitySource).toContain('px-[var(--editor-reading-gutter)]');

@@ -1,5 +1,5 @@
 import { spawn as nodeSpawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { accessSync, constants as fsConstants, existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
@@ -397,18 +397,59 @@ const safeToolToken = (value) => {
   return trimmed;
 };
 
+const MAX_GENERATED_IMAGES = 8;
+
+const compactBase64 = (value) => {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (trimmed.startsWith("data:") && !trimmed.includes(",")) return "";
+  const payload = trimmed.startsWith("data:") ? trimmed.slice(trimmed.indexOf(",") + 1) : trimmed;
+  const compact = payload.replace(/\s+/g, "");
+  if (!compact || compact.length > MAX_ATTACHMENT_CHARS || compact.length % 4 === 1) return "";
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(compact)) return "";
+  return compact;
+};
+
+const imageFingerprint = (base64) => createHash("sha256").update(base64).digest("hex").slice(0, 16);
+
+const imageEventFromBlock = (requestId, block, id) => {
+  if (!block || typeof block !== "object" || block.type !== "image") return null;
+  const mediaType = mediaTypeBase(block.mimeType);
+  if (!IMAGE_TYPES.has(mediaType)) return null;
+  const base64 = compactBase64(block.data);
+  if (!base64) return null;
+  return { requestId, type: "image", id, mediaType, base64 };
+};
+
+const toolImageEvents = (requestId, update) => {
+  if (!Array.isArray(update.content)) return [];
+  const toolId = safeToolToken(update.toolCallId) || "tool";
+  const events = [];
+  for (const item of update.content) {
+    if (events.length >= MAX_GENERATED_IMAGES) break;
+    const block = item?.type === "content" ? item.content : item;
+    const image = imageEventFromBlock(requestId, block, `${toolId}:${events.length}`);
+    if (image) events.push(image);
+  }
+  return events;
+};
+
 export function eventsFromSessionUpdate(requestId, params) {
   const update = params?.update;
   if (!update || typeof update !== "object") return [];
-  if (update.sessionUpdate === "agent_message_chunk" || update.sessionUpdate === "agent_thought_chunk") {
+  if (update.sessionUpdate === "agent_thought_chunk") {
     if (update.content?.type !== "text" || typeof update.content.text !== "string" || update.content.text.length === 0) {
       return [];
     }
-    return [{
-      requestId,
-      type: update.sessionUpdate === "agent_message_chunk" ? "text-delta" : "reasoning",
-      text: update.content.text,
-    }];
+    return [{ requestId, type: "reasoning", text: update.content.text }];
+  }
+  if (update.sessionUpdate === "agent_message_chunk") {
+    if (update.content?.type === "text" && typeof update.content.text === "string" && update.content.text.length > 0) {
+      return [{ requestId, type: "text-delta", text: update.content.text }];
+    }
+    const image = imageEventFromBlock(requestId, update.content, "");
+    if (!image) return [];
+    return [{ ...image, id: `message:${imageFingerprint(image.base64)}` }];
   }
   if (update.sessionUpdate !== "tool_call" && update.sessionUpdate !== "tool_call_update") return [];
   const name = safeToolToken(update.name) || safeToolToken(update.toolCallId) || "tool";
@@ -416,7 +457,7 @@ export function eventsFromSessionUpdate(requestId, params) {
   const event = { requestId, type: "tool", name, status };
   const title = safeToolToken(update.title);
   if (title) event.title = title;
-  return [event];
+  return [event, ...toolImageEvents(requestId, update)];
 }
 
 export function acpInitializeParams(version = clientVersion()) {

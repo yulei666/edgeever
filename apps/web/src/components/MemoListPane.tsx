@@ -51,6 +51,7 @@ import {
   Pencil,
   Copy,
 } from "lucide-react";
+import { WeChatIcon } from "./WeChatIcon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -75,6 +76,7 @@ import type {
   MemoListDensity,
   MemoContextMenuState,
   MemoDocumentAction,
+  MemoWeChatCopyResult,
   NotebookMoveOption,
 } from "@/lib/app-helpers";
 import { contentEnterMotion, paneEnterMotion } from "@/lib/motion";
@@ -392,6 +394,7 @@ export const MemoListPane = ({
   onTogglePinMemo,
   onMoveMemo,
   onRequestDocumentAction,
+  onCopyMemoToWeChat,
   onMoveSelectedMemos,
   onPinSelectedMemos,
   onExportSelectedMemos,
@@ -471,6 +474,7 @@ export const MemoListPane = ({
   onTogglePinMemo: (memo: MemoSummary) => void;
   onMoveMemo: (memoId: string, notebookId: string) => void;
   onRequestDocumentAction: (memoId: string, action: MemoDocumentAction, printWindow?: Window | null) => void;
+  onCopyMemoToWeChat: (memoId: string) => Promise<MemoWeChatCopyResult>;
   onMoveSelectedMemos: (notebookId: string) => void;
   onPinSelectedMemos: (pinned: boolean) => void;
   onExportSelectedMemos: () => void;
@@ -515,6 +519,7 @@ export const MemoListPane = ({
   const [lastSelectedMemoId, setLastSelectedMemoId] = useState<string | null>(null);
   const [moveTargetNotebookId, setMoveTargetNotebookId] = useState("");
   const [memoIdCopyNotice, setMemoIdCopyNotice] = useState<{ status: "copied" | "error"; id: string } | null>(null);
+  const [wechatCopyNotice, setWechatCopyNotice] = useState<"copied" | "error" | null>(null);
   const [fileDragActive, setFileDragActive] = useState(false);
 
   const filterOptions = useMemo(() => getMemoFilterOptions(t), [t]);
@@ -653,6 +658,16 @@ export const MemoListPane = ({
     const copied = await copyTextToClipboard(memo.id);
     setMemoIdCopyNotice({ status: copied ? "copied" : "error", id: memo.id });
     window.setTimeout(() => setMemoIdCopyNotice(null), copied ? 2200 : 3000);
+  };
+
+  const handleCopyContextMemoToWeChat = async () => {
+    const memo = memoContextMenu?.memo;
+    if (!memo || memo.diagramKind || memo.structuredTable || memo.infographic) return;
+    setMemoContextMenu(null);
+    const result = await onCopyMemoToWeChat(memo.id);
+    if (result === "editor") return;
+    setWechatCopyNotice(result);
+    window.setTimeout(() => setWechatCopyNotice(null), result === "copied" ? 2200 : 2600);
   };
 
   useEffect(() => {
@@ -875,7 +890,7 @@ export const MemoListPane = ({
     // Keep enough room for the full action list. Radix can still adjust the
     // final position, but this prevents the initial placement from starting
     // below the viewport on short or zoomed desktop viewports.
-    const menuHeight = view === "trash" ? 216 : 356;
+    const menuHeight = view === "trash" ? 216 : 392;
     const x = Math.min(clientX, Math.max(12, window.innerWidth - menuWidth - 12));
     const y = Math.min(clientY, Math.max(12, window.innerHeight - menuHeight - 12));
 
@@ -1634,6 +1649,15 @@ export const MemoListPane = ({
                     <Share2 className="h-4 w-4 text-slate-500" />
                     {t(isLocalMemoId(memoContextMenu.memo.id) ? "sharing.afterSync" : "sharing.action")}
                   </DropdownMenuItem>
+                  {!memoContextMenu.memo.diagramKind && !memoContextMenu.memo.structuredTable && !memoContextMenu.memo.infographic && (
+                    <DropdownMenuItem
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                      onClick={() => void handleCopyContextMemoToWeChat()}
+                    >
+                      <WeChatIcon className="h-4 w-4 text-slate-500" />
+                      {t("editor.copyToWeChat")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                     onClick={() => requestContextDocumentAction("export-markdown")}
@@ -1692,6 +1716,12 @@ export const MemoListPane = ({
       {memoIdCopyNotice && (
         <ClipboardCopyNotice status={memoIdCopyNotice.status}>
           {t(memoIdCopyNotice.status === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memoIdCopyNotice.id })}
+        </ClipboardCopyNotice>
+      )}
+
+      {wechatCopyNotice && (
+        <ClipboardCopyNotice status={wechatCopyNotice}>
+          {t(wechatCopyNotice === "copied" ? "editor.copiedToWeChat" : "editor.copyToWeChatFailed")}
         </ClipboardCopyNotice>
       )}
 

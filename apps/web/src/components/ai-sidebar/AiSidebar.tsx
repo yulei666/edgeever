@@ -22,6 +22,7 @@ import {
   Attachments,
 } from "@/components/ai-elements/attachments";
 import { Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Image } from "@/components/ai-elements/image";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
@@ -48,6 +49,8 @@ import { companionLocale } from "@/lib/companion-locale";
 import {
   AI_SIDEBAR_ADAPTER_KEY,
   AI_SIDEBAR_ADAPTER_PATH_KEY,
+  AI_SIDEBAR_LOCAL_THREAD_KEY,
+  AI_SIDEBAR_LOCAL_THREADS_KEY,
   AI_SIDEBAR_OPEN_KEY,
   AI_SIDEBAR_SOURCE_KEY,
   AI_SIDEBAR_THREAD_KEY,
@@ -59,6 +62,14 @@ import {
   type DesktopAcpAdapterId,
   type DesktopAcpEvent,
 } from "@/lib/desktop-acp";
+import {
+  chatThreadsFromTurns,
+  localAgentTranscript,
+  parseLocalAgentTurns,
+  resolveLocalAgentThreadId,
+  saveLocalAgentTurns,
+  type ChatThreadSummary,
+} from "@/lib/local-agent-threads";
 import { sidebarRevealTransition } from "@/lib/motion";
 import {
   SELECTION_AI_LANGUAGES,
@@ -107,14 +118,22 @@ type PendingAttachment = PreparedAiAttachment & {
 
 type LocalToolRow = { id: string; name: string; status: string; title?: string };
 
+type LocalImage = { id: string; mediaType: string; base64: string };
+
+const EMPTY_IMAGE_BYTES = new Uint8Array();
+const MAX_LOCAL_IMAGES = 8;
+
 type LocalTurn = {
   id: string;
+  threadId: string;
   message: string;
   response: string;
   reasoning: string;
   tools: LocalToolRow[];
+  images: LocalImage[];
   attachments: Array<{ id: string; filename: string; mediaType: string; byteLength: number }>;
   status: "running" | "completed" | "failed" | "cancelled";
+  createdAt: string;
 };
 
 type ActiveTurn = {
@@ -222,31 +241,9 @@ const writeAiSidebarThread = (threadId: string) => {
   writeStorage(AI_SIDEBAR_THREAD_KEY, threadId);
 };
 
-type SidebarThread = { id: string; title: string; updatedAt: string };
-
 const sidebarThreadLabel = (title: string) => {
   const clause = title.split(/[，。！？!?；;：:\n]/)[0]?.trim() || title;
   return clause.length >= 2 ? clause : title;
-};
-
-const sidebarThreadsFromTurns = (turns: CompanionTurn[]): SidebarThread[] => {
-  const byId = new Map<string, SidebarThread & { oldestAt: string }>();
-  for (const turn of turns) {
-    const title = turn.message.replace(/\s+/g, " ").trim();
-    const current = byId.get(turn.threadId);
-    if (!current) {
-      byId.set(turn.threadId, { id: turn.threadId, title, updatedAt: turn.createdAt, oldestAt: turn.createdAt });
-      continue;
-    }
-    if (turn.createdAt > current.updatedAt) current.updatedAt = turn.createdAt;
-    if (turn.createdAt < current.oldestAt && title) {
-      current.oldestAt = turn.createdAt;
-      current.title = title;
-    }
-  }
-  return [...byId.values()]
-    .sort((left, right) => (left.updatedAt < right.updatedAt ? 1 : -1))
-    .map(({ oldestAt: _oldestAt, ...thread }) => thread);
 };
 
 function AiSidebarThreadMenu({
@@ -256,7 +253,7 @@ function AiSidebarThreadMenu({
   onSelect,
   onCreate,
 }: {
-  threads: SidebarThread[];
+  threads: ChatThreadSummary[];
   threadId: string;
   title: string;
   onSelect: (threadId: string) => void;
@@ -272,7 +269,7 @@ function AiSidebarThreadMenu({
   const older = visible.filter((thread) => Date.parse(thread.updatedAt) < cutoff);
   const searchOnRecent = recent.length > 0 || older.length === 0;
 
-  const renderGroup = (label: string, items: SidebarThread[], withSearch: boolean) => {
+  const renderGroup = (label: string, items: ChatThreadSummary[], withSearch: boolean) => {
     if (!items.length) return null;
     return (
       <div>
@@ -311,6 +308,7 @@ function AiSidebarThreadMenu({
         <button
           type="button"
           className="flex h-8 min-w-0 max-w-52 items-center gap-1 rounded-full px-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+          data-ai-thread-menu=""
           aria-label={`${title} · ${t("aiAssistant.sidebar.history")}`}
         >
           <Sparkles className="size-3.5 shrink-0 text-slate-500" aria-hidden="true" />
@@ -731,9 +729,19 @@ function AiSidebarSession({
 }) {
   const { t, i18n } = useTranslation();
   const [source, setSource] = useState<"builtin" | "local">(readAiSidebarSource);
+  const [localAdapterId, setLocalAdapterId] = useState(() => readLocalAdapter()?.id ?? null);
   const [turns, setTurns] = useState<CompanionTurn[]>([]);
   const [actions, setActions] = useState<CompanionAction[]>([]);
-  const [localTurns, setLocalTurns] = useState<LocalTurn[]>([]);
+  const [localTurns, setLocalTurns] = useState<LocalTurn[]>(() => parseLocalAgentTurns(readStorage(AI_SIDEBAR_LOCAL_THREADS_KEY)).map((turn) => ({
+    ...turn,
+    images: [],
+  })));
+  const [localThreadId, setLocalThreadId] = useState(() => (
+    resolveLocalAgentThreadId(
+      readStorage(AI_SIDEBAR_LOCAL_THREAD_KEY),
+      parseLocalAgentTurns(readStorage(AI_SIDEBAR_LOCAL_THREADS_KEY)),
+    ) ?? createClientUuid()
+  ));
   const [threadId, setThreadId] = useState<string>(() => readAiSidebarThread() ?? createClientUuid());
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
@@ -753,6 +761,11 @@ function AiSidebarSession({
   const attachmentSnapshot = useRef<PendingAttachment[]>([]);
   const acpTurnIds = useRef(new Map<string, string>());
   const acpBuffer = useRef<DesktopAcpEvent[]>([]);
+  const localTurnsRef = useRef(localTurns);
+  const localThreadIdRef = useRef(localThreadId);
+  const localPersistTimer = useRef<number | null>(null);
+  localTurnsRef.current = localTurns;
+  localThreadIdRef.current = localThreadId;
   const focusRef = useRef({ selectionMarkdown, contentMarkdown, memoId, notebookId, notebookTitle, noteTitle, companionAvailable });
   focusRef.current = { selectionMarkdown, contentMarkdown, memoId, notebookId, notebookTitle, noteTitle, companionAvailable };
 
@@ -805,6 +818,38 @@ function AiSidebarSession({
     };
   }, []);
 
+  useEffect(() => {
+    if (!localTurns.length && !readStorage(AI_SIDEBAR_LOCAL_THREADS_KEY)) return;
+    if (localPersistTimer.current != null) window.clearTimeout(localPersistTimer.current);
+    localPersistTimer.current = window.setTimeout(() => {
+      try {
+        saveLocalAgentTurns(window.localStorage, AI_SIDEBAR_LOCAL_THREADS_KEY, localTurnsRef.current);
+      } catch {
+        // Private mode can reject storage writes. The open chat still stays in memory.
+      }
+    }, 400);
+    return () => {
+      if (localPersistTimer.current != null) window.clearTimeout(localPersistTimer.current);
+    };
+  }, [localTurns]);
+
+  useEffect(() => {
+    const flush = () => {
+      if (localPersistTimer.current != null) window.clearTimeout(localPersistTimer.current);
+      if (!localTurnsRef.current.length && !readStorage(AI_SIDEBAR_LOCAL_THREADS_KEY)) return;
+      try {
+        saveLocalAgentTurns(window.localStorage, AI_SIDEBAR_LOCAL_THREADS_KEY, localTurnsRef.current);
+      } catch {
+        // The in-memory chat remains available until the page closes.
+      }
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
+
   const applyAcpEventRef = useRef<(event: DesktopAcpEvent) => void>(() => undefined);
   useEffect(() => subscribeDesktopAcp((event) => {
     if (!acpTurnIds.current.has(event.requestId)) {
@@ -848,6 +893,22 @@ function AiSidebarSession({
       }));
       return;
     }
+    if (event.type === "image") {
+      setLocalTurns((previous) => previous.map((turn) => {
+        if (turn.id !== turnId || turn.status === "cancelled") return turn;
+        if (turn.images.some((image) => image.mediaType === event.mediaType && image.base64 === event.base64)) return turn;
+        const index = turn.images.findIndex((image) => image.id === event.id);
+        const next = { id: event.id, mediaType: event.mediaType, base64: event.base64 };
+        if (index >= 0) {
+          const images = turn.images.slice();
+          images[index] = next;
+          return { ...turn, images };
+        }
+        if (turn.images.length >= MAX_LOCAL_IMAGES) return turn;
+        return { ...turn, images: [...turn.images, next] };
+      }));
+      return;
+    }
     if (event.type === "error" || event.type === "done") {
       setLocalTurns((previous) => previous.map((turn) => turn.id === turnId && turn.status === "running"
         ? { ...turn, status: event.type === "error" ? "failed" : "completed" }
@@ -862,7 +923,10 @@ function AiSidebarSession({
   };
 
   useEffect(() => {
-    const syncSource = () => setSource(readAiSidebarSource());
+    const syncSource = () => {
+      setSource(readAiSidebarSource());
+      setLocalAdapterId(readLocalAdapter()?.id ?? null);
+    };
     syncSource();
     if (!open) return;
     window.addEventListener("focus", syncSource);
@@ -1018,20 +1082,27 @@ function AiSidebarSession({
           mediaType: item.mediaType,
           byteLength: item.byteLength,
         }));
+        const activeLocalThreadId = localThreadIdRef.current;
+        const transcript = localAgentTranscript(localTurnsRef.current, activeLocalThreadId);
+        const noteContext = contextText();
+        writeStorage(AI_SIDEBAR_LOCAL_THREAD_KEY, activeLocalThreadId);
         setLocalTurns((previous) => [...previous, {
           id,
+          threadId: activeLocalThreadId,
           message: text,
           response: "",
           reasoning: "",
           tools: [],
+          images: [],
           attachments: localAttachments,
           status: "running",
+          createdAt: new Date().toISOString(),
         }]);
         const result = await promptDesktopAcp({
           adapterId: adapter.id,
           ...(adapter.path ? { path: adapter.path } : {}),
           prompt: text,
-          ...(contextText() ? { contextText: contextText() } : {}),
+          ...((noteContext || transcript) ? { contextText: [noteContext, transcript].filter(Boolean).join("\n\n") } : {}),
           ...(snapshot.length ? {
             attachments: snapshot.map((item) => ({
               filename: item.filename,
@@ -1324,17 +1395,26 @@ function AiSidebarSession({
     onOpenCompanionNote(linkedId, source.notebookId);
   };
 
-  const threads = useMemo(() => sidebarThreadsFromTurns(turns), [turns]);
-  const threadTitle = threads.find((thread) => thread.id === threadId)?.title || t("aiAssistant.sidebar.newThread");
+  const companionThreads = useMemo(() => chatThreadsFromTurns(turns), [turns]);
+  const localThreadList = useMemo(() => chatThreadsFromTurns(localTurns), [localTurns]);
+  const menuThreads = source === "builtin" ? companionThreads : localThreadList;
+  const menuThreadId = source === "builtin" ? threadId : localThreadId;
+  const threadTitle = menuThreads.find((thread) => thread.id === menuThreadId)?.title || t("aiAssistant.sidebar.newThread");
   const rememberThread = (id: string) => {
     threadPinned.current = true;
     setThreadId(id);
     setError(null);
     writeAiSidebarThread(id);
   };
+  const selectLocalThread = (id: string) => {
+    setLocalThreadId(id);
+    setError(null);
+    writeStorage(AI_SIDEBAR_LOCAL_THREAD_KEY, id);
+  };
   const threadTurns = turns.filter((turn) => turn.threadId === threadId).slice().reverse();
+  const localThreadTurns = localTurns.filter((turn) => turn.threadId === localThreadId);
   const visibleCompanion = source === "builtin";
-  const visibleTurns = visibleCompanion ? threadTurns : localTurns;
+  const visibleTurns = visibleCompanion ? threadTurns : localThreadTurns;
   const running = busy || visibleTurns.some((turn) => turn.status === "running");
 
   const renderSelectionReply = (turnId: string, response: string, status: string) => {
@@ -1376,25 +1456,39 @@ function AiSidebarSession({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-card">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-200 px-2">
-        {source === "builtin" ? (
-          <AiSidebarThreadMenu
-            threads={threads}
-            threadId={threadId}
-            title={threadTitle}
-            onSelect={rememberThread}
-            onCreate={() => {
-              if (threads.some((thread) => thread.id === threadId)) rememberThread(createClientUuid());
-            }}
-          />
-        ) : (
-          <>
-            <Sparkles className="ml-1 h-4 w-4 shrink-0 text-slate-500" aria-hidden="true" />
-            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-950">{t("aiAssistant.sidebar.title")}</h2>
-            <span className="shrink-0 text-xs text-slate-500">{t("aiAssistant.sidebar.localStatus")}</span>
-          </>
-        )}
+        <AiSidebarThreadMenu
+          threads={menuThreads}
+          threadId={menuThreadId}
+          title={threadTitle}
+          onSelect={source === "builtin" ? rememberThread : selectLocalThread}
+          onCreate={() => {
+            if (source === "local") {
+              if (localTurns.some((turn) => turn.threadId === localThreadId)) selectLocalThread(createClientUuid());
+              return;
+            }
+            if (companionThreads.some((thread) => thread.id === threadId)) rememberThread(createClientUuid());
+          }}
+        />
+        {source === "local" ? (
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="ml-auto min-w-0 max-w-[46%] shrink truncate rounded-sm text-right text-xs text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                  data-ai-local-agent=""
+                  tabIndex={0}
+                >
+                  {localAdapterId ? t(`aiAssistant.agentSource.${localAdapterId}`) : t("aiAssistant.sidebar.localStatus")}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {localAdapterId ? t(`aiAssistant.agentSource.${localAdapterId}`) : t("aiAssistant.sidebar.localStatus")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
         <Button
-          className="ml-auto"
+          className={source === "local" ? undefined : "ml-auto"}
           type="button"
           size="icon-sm"
           variant="ghost"
@@ -1406,7 +1500,7 @@ function AiSidebarSession({
         </Button>
       </div>
       {error ? <p role="alert" className="shrink-0 px-3 pt-2 text-sm text-rose-700">{error}</p> : null}
-      <Conversation key={source === "builtin" ? threadId : "local"} className="min-h-0 flex-1">
+      <Conversation key={menuThreadId} className="min-h-0 flex-1">
         <ConversationContent className={sidebarThreadClassName}>
           {loading && visibleCompanion ? <p role="status" className="text-sm text-slate-500">{t("common.loading")}</p> : null}
           {!loading && !visibleTurns.length ? (
@@ -1463,7 +1557,7 @@ function AiSidebarSession({
                 {renderActions(turn.id)}
               </Message>
             </div>
-          )) : localTurns.map((turn) => (
+          )) : localThreadTurns.map((turn) => (
             <div key={turn.id} className="space-y-2">
               <Message from="user">
                 <MessageContent className={sidebarUserMessageClassName}>{turn.message}</MessageContent>
@@ -1487,6 +1581,20 @@ function AiSidebarSession({
                       <li key={tool.id}>{t("aiAssistant.sidebar.toolProgress", { name: tool.title || tool.name, status: tool.status })}</li>
                     ))}
                   </ul>
+                ) : null}
+                {turn.images.length ? (
+                  <div className="flex flex-col gap-2">
+                    {turn.images.map((image) => (
+                      <Image
+                        key={image.id}
+                        alt={t("aiAssistant.sidebar.generatedImage")}
+                        base64={image.base64}
+                        className="max-h-96"
+                        mediaType={image.mediaType}
+                        uint8Array={EMPTY_IMAGE_BYTES}
+                      />
+                    ))}
+                  </div>
                 ) : null}
                 {turn.response ? <AiSidebarMessage isAnimating={turn.status === "running"}>{turn.response}</AiSidebarMessage> : null}
                 {renderSelectionReply(turn.id, turn.response, turn.status)}

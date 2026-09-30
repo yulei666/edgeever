@@ -20,5 +20,7 @@ describe("infographic editor header", () => {
     expect(source).not.toContain('t("infographic.save")');
     expect(source).toContain("parseTagsText(tagsRef.current)");
     expect(source).toContain("repository.moveMemos");
+    expect(source).not.toContain("MemoEditorUpdatedLabel");
+    expect(source).not.toContain("formatDateTime(memo.updatedAt)");
   });
 });

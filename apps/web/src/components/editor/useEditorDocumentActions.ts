@@ -237,6 +237,7 @@ export const useEditorDocumentActions = ({
           if (canShareMemo) setShareOpen(true);
         },
         shareImage: handleOpenImageShare,
+        copyWeChat: () => void handleCopyToWeChat(),
       },
       documentActionRequest.printWindow,
     );
@@ -244,6 +245,7 @@ export const useEditorDocumentActions = ({
     canShareMemo,
     documentActionRequest,
     editor,
+    handleCopyToWeChat,
     handleExportHtml,
     handleExportMarkdown,
     handleExportPdf,

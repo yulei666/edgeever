@@ -477,6 +477,54 @@ describe("ACP spawn and failure mapping", () => {
       update: { sessionUpdate: "tool_call", toolCallId: "call_2", title: `${home}/secret`, status: "completed" },
     })).toEqual([{ requestId: "r1", type: "tool", name: "call_2", status: "completed" }]);
   });
+
+  test("forwards generated images without paths, diffs, or non-image payloads", () => {
+    const png = Buffer.from("png-bytes").toString("base64");
+    const wrapped = `data:image/png;base64,${png.slice(0, 4)}\n${png.slice(4)}`;
+    const message = eventsFromSessionUpdate("r1", {
+      update: {
+        sessionUpdate: "agent_message_chunk",
+        content: { type: "image", mimeType: "image/png", data: wrapped, uri: `${home}/cat.png` },
+      },
+    });
+    const again = eventsFromSessionUpdate("r1", {
+      update: {
+        sessionUpdate: "agent_message_chunk",
+        content: { type: "image", mimeType: "image/png", data: png, uri: `file://${home}/cat.png` },
+      },
+    });
+    expect(message).toEqual([{ requestId: "r1", type: "image", id: again[0].id, mediaType: "image/png", base64: png }]);
+    expect(message[0].id.startsWith("message:")).toBe(true);
+    expect(JSON.stringify(message)).not.toContain(home);
+    expect(JSON.stringify(message)).not.toContain("file:");
+
+    const tool = eventsFromSessionUpdate("r1", {
+      update: {
+        sessionUpdate: "tool_call_update",
+        toolCallId: "call_img",
+        title: "Image generation",
+        status: "completed",
+        content: [
+          { type: "diff", path: `${home}/note.md`, oldText: "a", newText: "b" },
+          { type: "content", content: { type: "text", text: `saved ${home}/cat.png` } },
+          { type: "content", content: { type: "image", mimeType: "image/jpeg", data: png, uri: `${home}/cat.png` } },
+          { type: "content", content: { type: "image", mimeType: "image/svg+xml", data: png } },
+          { type: "image", mimeType: "image/webp", data: `${home}/cat.webp` },
+        ],
+      },
+    });
+    expect(tool).toEqual([
+      { requestId: "r1", type: "tool", name: "call_img", status: "completed", title: "Image generation" },
+      { requestId: "r1", type: "image", id: "call_img:0", mediaType: "image/jpeg", base64: png },
+    ]);
+    expect(JSON.stringify(tool)).not.toContain(home);
+    expect(eventsFromSessionUpdate("r1", {
+      update: { sessionUpdate: "agent_thought_chunk", content: { type: "image", mimeType: "image/png", data: png } },
+    })).toEqual([]);
+    expect(eventsFromSessionUpdate("r1", {
+      update: { sessionUpdate: "agent_message_chunk", content: { type: "image", mimeType: "image/png", data: "@@@@" } },
+    })).toEqual([]);
+  });
 });
 
 // bun test started at the workspace root drops child stdin and stdout pipes
