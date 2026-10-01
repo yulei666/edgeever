@@ -121,6 +121,19 @@ describe("preparePublishArticle", () => {
   });
 });
 
+describe("formula snapshots for WeChat", () => {
+  test("parks the off-screen offset on a wrapper and snapshots an in-flow mount", async () => {
+    const source = await Bun.file(new URL("./wechat-copy.ts", import.meta.url)).text();
+    const start = source.indexOf("const placeMathRasterMount");
+    const end = source.indexOf("const readCssNumber");
+    const raster = source.slice(start, end);
+    expect(raster).toContain("mount.style.position = \"static\"");
+    expect(raster).toContain("left: -10000px");
+    expect(raster).not.toContain("mount.style.left = \"-10000px\"");
+    expect(raster).toContain("canvasHasInk");
+  });
+});
+
 describe("prepareMarkdownPublishArticle", () => {
   test("renders formulas, keeps currency, and colors the shell snippet", () => {
     const root = prepareMarkdownPublishArticle(MARKDOWN);

@@ -1,4 +1,4 @@
-export type DesktopAcpAdapterId = "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+export type DesktopAcpAdapterId = "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
 export type DesktopAcpAdapterState = "not_installed" | "installing" | "needs_login" | "available" | "failed";
 
 export type DesktopAcpPromptCapabilities = {

@@ -937,32 +937,73 @@ const neutralizeWeChatTopics = (root: HTMLElement) => {
 
 const WECHAT_CONTENT_WIDTH = 677;
 
+/**
+ * html-to-image copies the target's computed position into the SVG snapshot.
+ * A `position: fixed; left: -10000px` target is painted outside that SVG, so
+ * WeChat receives a blank PNG and the formula looks missing. Park the offset
+ * on a wrapper and snapshot an in-flow mount, same as note-image export.
+ */
+const placeMathRasterMount = (host: HTMLElement, kind: "inline" | "block") => {
+  const sandbox = document.createElement("div");
+  sandbox.setAttribute("aria-hidden", "true");
+  sandbox.style.cssText = "position: fixed; left: -10000px; top: 0; pointer-events: none;";
+  const mount = host.cloneNode(true) as HTMLElement;
+  mount.style.position = "static";
+  mount.style.left = "auto";
+  mount.style.top = "auto";
+  mount.style.zIndex = "auto";
+  mount.style.margin = "0";
+  mount.style.transform = "none";
+  mount.style.background = "#ffffff";
+  mount.style.color = BODY_COLOR;
+  mount.style.display = "inline-block";
+  mount.style.width = "max-content";
+  mount.style.maxWidth = "none";
+  mount.style.padding = kind === "block" ? "8px 4px" : "2px 2px";
+  mount.style.boxSizing = "content-box";
+  sandbox.appendChild(mount);
+  document.body.appendChild(sandbox);
+  return { sandbox, mount };
+};
+
+const canvasHasInk = (canvas: HTMLCanvasElement) => {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return false;
+  const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+  for (let index = 0; index < data.length; index += 4) {
+    const alpha = data[index + 3] ?? 0;
+    if (alpha < 16) continue;
+    const red = data[index] ?? 255;
+    const green = data[index + 1] ?? 255;
+    const blue = data[index + 2] ?? 255;
+    if (red < 250 || green < 250 || blue < 250) return true;
+  }
+  return false;
+};
+
 const rasterizeMathForWeChat = async (root: HTMLElement) => {
   const hosts = Array.from(root.querySelectorAll<HTMLElement>("[data-ee-math]"));
   if (hosts.length === 0) return;
-  await document.fonts?.ready;
   for (const host of hosts) {
     const kind = host.getAttribute("data-ee-math") === "block" ? "block" : "inline";
     const latex = host.getAttribute("data-latex") || host.textContent || "";
     if (!host.querySelector(".katex")) continue;
-    const mount = host.cloneNode(true) as HTMLElement;
-    mount.style.position = "fixed";
-    mount.style.left = "-10000px";
-    mount.style.top = "0";
-    mount.style.zIndex = "-1";
-    mount.style.margin = "0";
-    mount.style.background = "transparent";
-    mount.style.display = "inline-block";
-    mount.style.width = "max-content";
-    mount.style.maxWidth = kind === "block" ? `${WECHAT_CONTENT_WIDTH}px` : "none";
-    document.body.appendChild(mount);
+    const { sandbox, mount } = placeMathRasterMount(host, kind);
     try {
+      await document.fonts?.ready;
       const canvas = await toCanvas(mount, {
-        backgroundColor: "transparent",
+        backgroundColor: "#ffffff",
         cacheBust: false,
         pixelRatio: 2,
+        style: {
+          position: "static",
+          left: "0px",
+          top: "0px",
+          margin: "0px",
+          transform: "none",
+        },
       });
-      if (canvas.width < 2 || canvas.height < 2) continue;
+      if (canvas.width < 2 || canvas.height < 2 || !canvasHasInk(canvas)) continue;
       const cssWidth = Math.max(1, Math.round(canvas.width / 2));
       const cssHeight = Math.max(1, Math.round(canvas.height / 2));
       const image = document.createElement("img");
@@ -973,17 +1014,17 @@ const rasterizeMathForWeChat = async (root: HTMLElement) => {
         const height = Math.max(1, Math.round(cssHeight * (width / cssWidth)));
         image.width = width;
         image.height = height;
-        image.style.cssText = `display: block; max-width: 100%; width: ${width}px; height: auto; margin: 16px auto; border: 0; border-radius: 0;`;
+        image.style.cssText = `display: block; max-width: 100%; width: ${width}px; height: auto; margin: 16px auto; border: 0; border-radius: 0; background: #ffffff;`;
       } else {
         image.width = cssWidth;
         image.height = cssHeight;
-        image.style.cssText = `display: inline-block; width: ${cssWidth}px; height: ${cssHeight}px; margin: 0; border: 0; border-radius: 0; vertical-align: -0.15em;`;
+        image.style.cssText = `display: inline-block; max-width: 100%; width: ${cssWidth}px; height: ${cssHeight}px; margin: 0 1px; border: 0; border-radius: 0; background: #ffffff; vertical-align: middle;`;
       }
       host.replaceWith(image);
     } catch {
       // Keep the KaTeX HTML so a failed snapshot never drops the formula.
     } finally {
-      mount.remove();
+      sandbox.remove();
     }
   }
 };
@@ -1077,11 +1118,16 @@ export const buildWeChatClipboardHtml = async (editor: Editor) => {
 export const copyEditorToWeChat = async (editor: Editor) =>
   copyHtmlToClipboard(await buildWeChatClipboardHtml(editor), editor.getText({ blockSeparator: "\n" }));
 
-export const copyMarkdownToWeChat = async (markdown: string) => {
+export const buildMarkdownWeChatHtml = async (markdown: string) => {
   const container = prepareMarkdownPublishArticle(markdown);
   await rasterizeMathForWeChat(container);
   await embedMermaidForWeChat(container);
   await embedImagesForWeChat(container);
   await rasterizePublishOrnamentsForWeChat(container);
-  await copyHtmlToClipboard(container.outerHTML, container.textContent ?? "");
+  return { html: container.outerHTML, text: container.textContent ?? "" };
+};
+
+export const copyMarkdownToWeChat = async (markdown: string) => {
+  const { html, text } = await buildMarkdownWeChatHtml(markdown);
+  await copyHtmlToClipboard(html, text);
 };

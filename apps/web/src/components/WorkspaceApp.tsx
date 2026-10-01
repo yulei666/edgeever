@@ -3557,6 +3557,8 @@ export const WorkspaceApp = ({
                           }}
                           onOpenExecutionCenter={handleOpenExecutionCenter}
                           onToggleDesktopFocusMode={toggleDesktopFocusMode}
+                          aiAssistantOpenToken={noteAiAssistantOpenToken}
+                          shortcutSettings={shortcutSettings}
                           onSaved={async (memo) => {
                             await putLocalMemo(localDataScope, memo);
                             cacheMemoDetail(queryClient, memo, memoView);

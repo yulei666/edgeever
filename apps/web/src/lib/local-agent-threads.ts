@@ -20,7 +20,7 @@ export type LocalAgentAttachmentRecord = {
   byteLength: number;
 };
 
-// Pictures stay on the live turn only. The stored transcript is text, so a reload does not keep generated images.
+// Generated pictures are stored separately in IndexedDB to keep large image data out of localStorage.
 export type LocalAgentTurnRecord = {
   id: string;
   threadId: string;
@@ -161,17 +161,18 @@ export const saveLocalAgentTurns = (storage: StorageLike, key: string, turns: re
   for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
       storage.setItem(key, JSON.stringify({ version: LOCAL_AGENT_STORE_VERSION, turns: remaining }));
-      return;
+      return remaining;
     } catch {
       const threads = turnsByThread(remaining);
       if (threads.length > 1) {
         remaining = threads.slice(0, -1).flatMap((thread) => thread.turns);
         continue;
       }
-      if (remaining.length <= 1) return;
+      if (remaining.length <= 1) return null;
       remaining = remaining.slice(Math.ceil(remaining.length / 2));
     }
   }
+  return null;
 };
 
 export const resolveLocalAgentThreadId = (

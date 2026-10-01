@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent,
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { useTranslation } from "react-i18next";
-import { Check, ChevronDown, Loader2, PanelRightClose, Paperclip, Plus, Search, Sparkles, X } from "lucide-react";
+import { Check, ChevronDown, Download, FileText, Loader2, PanelRightClose, Paperclip, Plus, Search, Sparkles, X } from "lucide-react";
 import type { CompanionAction, CompanionAnswer, CompanionEvent, CompanionTurn, CompanionTurnInput } from "@edgeever/shared";
 import { buildRevisionDiffRows, createMemoLinkHref, parseMemoLinkHref } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Reasoning, ReasoningContent, ReasoningTrigger } from "@/components/ai-elements/reasoning";
 import { api, ApiRequestError } from "@/lib/api";
+import { sidebarCompanionFocus, sidebarLocalContextText } from "@/lib/ai-sidebar-context";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { createClientUuid } from "@/lib/client-id";
 import {
@@ -70,6 +71,7 @@ import {
   saveLocalAgentTurns,
   type ChatThreadSummary,
 } from "@/lib/local-agent-threads";
+import { LocalAgentImageStore } from "@/lib/local-agent-images";
 import { sidebarRevealTransition } from "@/lib/motion";
 import {
   SELECTION_AI_LANGUAGES,
@@ -82,6 +84,8 @@ import {
 import { cn } from "@/lib/utils";
 import { CompanionQuestionForm } from "../CompanionQuestionForm";
 import { AiSidebarMessage } from "./AiSidebarMessage";
+import { AiSidebarLocalProcess } from "./AiSidebarLocalProcess";
+import { InfographicSidebarSession, type InfographicSidebarController } from "./InfographicSidebarSession";
 
 const SIDEBAR_DEFAULT_WIDTH = 380;
 const sidebarThreadClassName = cn(
@@ -122,6 +126,7 @@ type LocalImage = { id: string; mediaType: string; base64: string };
 
 const EMPTY_IMAGE_BYTES = new Uint8Array();
 const MAX_LOCAL_IMAGES = 8;
+const localAgentImageStore = new LocalAgentImageStore();
 
 type LocalTurn = {
   id: string;
@@ -172,6 +177,7 @@ type AiSidebarProps = AiSidebarFocus & {
   beforeCompanionApply?: () => Promise<void>;
   onCompanionNotesChanged?: () => Promise<void>;
   onOpenCompanionNote?: (id: string, notebookId: string) => void;
+  infographic?: InfographicSidebarController | null;
 };
 
 const SELECTION_TURN_STORAGE = "edgeever.aiSidebar.selectionTurns";
@@ -345,7 +351,7 @@ function AiSidebarThreadMenu({
 
 const readLocalAdapter = (): { id: DesktopAcpAdapterId; path?: string } | null => {
   const id = readStorage(AI_SIDEBAR_ADAPTER_KEY);
-  if (id !== "codex" && id !== "antigravity" && id !== "grokBuild" && id !== "deepseekHarness" && id !== "piAgent" && id !== "workbuddyCn" && id !== "workbuddyIntl") return null;
+  if (id !== "codex" && id !== "claudeCode" && id !== "antigravity" && id !== "openClaw" && id !== "hermesAgent" && id !== "grokBuild" && id !== "deepseekHarness" && id !== "piAgent" && id !== "workbuddyCn" && id !== "workbuddyIntl") return null;
   const path = readStorage(AI_SIDEBAR_ADAPTER_PATH_KEY)?.trim();
   return id === "antigravity" && path ? { id, path } : { id };
 };
@@ -559,6 +565,9 @@ function SidebarComposer({
   onAddFiles,
   onRemoveAttachment,
   onLaunch,
+  includeCurrentNote,
+  currentNoteAvailable,
+  onIncludeCurrentNoteChange,
   onStop,
   skillPrompt,
   focusToken,
@@ -570,7 +579,10 @@ function SidebarComposer({
   placeholder: string;
   onAddFiles: (files: File[]) => void;
   onRemoveAttachment: (id: string) => void;
-  onLaunch: (message: string) => Promise<string>;
+  onLaunch: (message: string, options?: { includeCurrentNote?: boolean }) => Promise<string>;
+  includeCurrentNote: boolean;
+  currentNoteAvailable: boolean;
+  onIncludeCurrentNoteChange: (include: boolean) => void;
   onStop: () => void;
   skillPrompt: (id: SkillId, rest?: string) => string;
   focusToken: number;
@@ -592,9 +604,9 @@ function SidebarComposer({
   const slashOpen = token.startsWith("/") && !draft.trimStart().includes("\n");
   const slashMatches = slashOpen ? SKILLS.filter((skill) => skill.command.startsWith(token)) : [];
 
-  const launch = async (message: string, restoreDraft?: string) => {
+  const launch = async (message: string, restoreDraft?: string, forceCurrentNote = false) => {
     try {
-      await onLaunch(message);
+      await onLaunch(message, forceCurrentNote ? { includeCurrentNote: true } : undefined);
       if (restoreDraft !== undefined) textInput.clear();
     } catch (cause) {
       if (restoreDraft !== undefined && !isAbortError(cause)) textInput.setInput(restoreDraft);
@@ -618,7 +630,7 @@ function SidebarComposer({
               <button
                 type="button"
                 className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-slate-50"
-                onClick={() => void launch(skillPrompt(skill.id), draft).catch(() => undefined)}
+                onClick={() => void launch(skillPrompt(skill.id), draft, true).catch(() => undefined)}
               >
                 <span className="font-medium text-slate-800">{t(`aiAssistant.sidebar.skills.${skill.id}`)}</span>
                 <span className="truncate text-xs text-slate-400">{skill.command}</span>
@@ -634,7 +646,7 @@ function SidebarComposer({
           const raw = text.trim();
           if (!raw) throw new Error("empty");
           const skill = matchSkill(raw);
-          await launch(skill ? skillPrompt(skill.id, skill.rest) : raw);
+          await launch(skill ? skillPrompt(skill.id, skill.rest) : raw, undefined, Boolean(skill));
         }}
       >
         {attachments.length ? (
@@ -670,6 +682,20 @@ function SidebarComposer({
             >
               <Paperclip className="h-4 w-4" />
             </Button>
+            {currentNoteAvailable ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                aria-pressed={includeCurrentNote}
+                className={includeCurrentNote ? "border-slate-600 bg-slate-100 text-slate-900 hover:bg-slate-200" : undefined}
+                disabled={busy || locked}
+                onClick={() => onIncludeCurrentNoteChange(!includeCurrentNote)}
+              >
+                <FileText className="size-3.5" aria-hidden="true" />
+                {t("aiAssistant.sidebar.includeCurrentNote")}
+              </Button>
+            ) : null}
           </PromptInputTools>
           {busy ? (
             <Button type="button" size="sm" variant="outline" onClick={onStop}>
@@ -751,6 +777,7 @@ function AiSidebarSession({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [useMemory, setUseMemory] = useState(false);
+  const [includeCurrentNote, setIncludeCurrentNote] = useState(false);
   const [composerFocusToken, setComposerFocusToken] = useState(0);
   const [selectionTurnKinds, setSelectionTurnKinds] = useState<Record<string, "explain" | "translate">>(readSelectionTurnKinds);
   const alive = useRef(true);
@@ -764,10 +791,15 @@ function AiSidebarSession({
   const localTurnsRef = useRef(localTurns);
   const localThreadIdRef = useRef(localThreadId);
   const localPersistTimer = useRef<number | null>(null);
+  const imagesByTurn = useRef(new Map<string, Map<string, LocalImage>>());
   localTurnsRef.current = localTurns;
   localThreadIdRef.current = localThreadId;
   const focusRef = useRef({ selectionMarkdown, contentMarkdown, memoId, notebookId, notebookTitle, noteTitle, companionAvailable });
   focusRef.current = { selectionMarkdown, contentMarkdown, memoId, notebookId, notebookTitle, noteTitle, companionAvailable };
+
+  useEffect(() => {
+    setIncludeCurrentNote(false);
+  }, [memoId]);
 
   const explainError = useCallback((cause: unknown) => {
     const code = cause instanceof ApiRequestError ? cause.code : "";
@@ -819,11 +851,35 @@ function AiSidebarSession({
   }, []);
 
   useEffect(() => {
+    const turnIds = localTurnsRef.current.map((turn) => turn.id);
+    if (!turnIds.length) return;
+    void localAgentImageStore.list(turnIds).then((images) => {
+      if (!alive.current || !images.length) return;
+      const byTurn = new Map<string, LocalImage[]>();
+      for (const image of images) {
+        const list = byTurn.get(image.turnId) ?? [];
+        if (list.length < MAX_LOCAL_IMAGES) list.push({ id: image.id, mediaType: image.mediaType, base64: image.base64 });
+        byTurn.set(image.turnId, list);
+      }
+      setLocalTurns((previous) => previous.map((turn) => {
+        const saved = byTurn.get(turn.id);
+        if (!saved?.length) return turn;
+        const currentIds = new Set(turn.images.map((image) => image.id));
+        const restored = [...turn.images, ...saved.filter((image) => !currentIds.has(image.id))].slice(0, MAX_LOCAL_IMAGES);
+        return { ...turn, images: restored };
+      }));
+    }).catch(() => {
+      if (alive.current) setError(t("aiAssistant.sidebar.imageSaveFailed"));
+    });
+  }, [t]);
+
+  useEffect(() => {
     if (!localTurns.length && !readStorage(AI_SIDEBAR_LOCAL_THREADS_KEY)) return;
     if (localPersistTimer.current != null) window.clearTimeout(localPersistTimer.current);
     localPersistTimer.current = window.setTimeout(() => {
       try {
-        saveLocalAgentTurns(window.localStorage, AI_SIDEBAR_LOCAL_THREADS_KEY, localTurnsRef.current);
+        const saved = saveLocalAgentTurns(window.localStorage, AI_SIDEBAR_LOCAL_THREADS_KEY, localTurnsRef.current);
+        if (saved) void localAgentImageStore.prune(saved.map((turn) => turn.id)).catch(() => undefined);
       } catch {
         // Private mode can reject storage writes. The open chat still stays in memory.
       }
@@ -838,7 +894,8 @@ function AiSidebarSession({
       if (localPersistTimer.current != null) window.clearTimeout(localPersistTimer.current);
       if (!localTurnsRef.current.length && !readStorage(AI_SIDEBAR_LOCAL_THREADS_KEY)) return;
       try {
-        saveLocalAgentTurns(window.localStorage, AI_SIDEBAR_LOCAL_THREADS_KEY, localTurnsRef.current);
+        const saved = saveLocalAgentTurns(window.localStorage, AI_SIDEBAR_LOCAL_THREADS_KEY, localTurnsRef.current);
+        if (saved) void localAgentImageStore.prune(saved.map((turn) => turn.id)).catch(() => undefined);
       } catch {
         // The in-memory chat remains available until the page closes.
       }
@@ -894,6 +951,16 @@ function AiSidebarSession({
       return;
     }
     if (event.type === "image") {
+      const current = localTurnsRef.current.find((turn) => turn.id === turnId);
+      if (current?.status === "cancelled") return;
+      const known = imagesByTurn.current.get(turnId) ?? new Map(current?.images.map((image) => [image.id, image]) ?? []);
+      if ([...known.values()].some((image) => image.id !== event.id && image.mediaType === event.mediaType && image.base64 === event.base64)) return;
+      if (!known.has(event.id) && known.size >= MAX_LOCAL_IMAGES) return;
+      known.set(event.id, { id: event.id, mediaType: event.mediaType, base64: event.base64 });
+      imagesByTurn.current.set(turnId, known);
+      void localAgentImageStore.put({ turnId, id: event.id, mediaType: event.mediaType, base64: event.base64 }).catch(() => {
+        if (alive.current) setError(t("aiAssistant.sidebar.imageSaveFailed"));
+      });
       setLocalTurns((previous) => previous.map((turn) => {
         if (turn.id !== turnId || turn.status === "cancelled") return turn;
         if (turn.images.some((image) => image.mediaType === event.mediaType && image.base64 === event.base64)) return turn;
@@ -913,7 +980,9 @@ function AiSidebarSession({
       setLocalTurns((previous) => previous.map((turn) => turn.id === turnId && turn.status === "running"
         ? { ...turn, status: event.type === "error" ? "failed" : "completed" }
         : turn));
-      if (event.type === "error" && event.message) setError(event.message);
+      if (event.type === "error" && event.message) {
+        setError(event.message === "note_access_unavailable" ? t("aiAssistant.sidebar.noteAccessUnavailable") : event.message);
+      }
       if (active.current?.requestId === event.requestId) {
         active.current = null;
         locked.current = false;
@@ -988,31 +1057,6 @@ function AiSidebarSession({
     await onCompanionNotesChanged?.()?.catch(() => undefined);
   }, [onCompanionNotesChanged, reloadCompanion]);
 
-  const buildFocus = useCallback((): CompanionTurnInput["focus"] => {
-    const focus = focusRef.current;
-    const selection = focus.selectionMarkdown?.trim().slice(0, 2000) ?? "";
-    const content = focus.contentMarkdown?.trim() ?? "";
-    const excerpt = content.slice(0, 4000);
-    const next: NonNullable<CompanionTurnInput["focus"]> = {};
-    if (focus.memoId) next.memoId = focus.memoId;
-    if (focus.notebookId) next.notebookId = focus.notebookId;
-    if (focus.notebookTitle) next.notebookTitle = focus.notebookTitle;
-    if (focus.noteTitle?.trim()) next.title = focus.noteTitle.trim();
-    if (selection) next.selectionMarkdown = selection;
-    if (excerpt) {
-      next.contentMarkdown = excerpt;
-      if (content.length > 4000) next.contentTruncated = true;
-    }
-    return Object.keys(next).length ? next : undefined;
-  }, []);
-
-  const contextText = useCallback(() => {
-    const focus = focusRef.current;
-    const selection = focus.selectionMarkdown?.trim().slice(0, 2000) ?? "";
-    const excerpt = focus.contentMarkdown?.trim().slice(0, 2000) ?? "";
-    return [selection, excerpt].filter(Boolean).join("\n\n");
-  }, []);
-
   const skillPrompt = useCallback((id: SkillId, rest = "") => {
     const prompt = t(`aiAssistant.sidebar.skillPrompts.${id}`);
     return rest ? `${prompt}\n\n${rest}` : prompt;
@@ -1050,12 +1094,14 @@ function AiSidebarSession({
     onStopReady.current = () => { void stop(); };
   }, [onStopReady, stop]);
 
-  const launch = useCallback(async (message: string): Promise<string> => {
+  const launch = useCallback(async (message: string, options?: { includeCurrentNote?: boolean }): Promise<string> => {
     const text = message.trim();
     if (!text || locked.current) throw new Error("busy");
+    const useCurrentNote = options?.includeCurrentNote ?? includeCurrentNote;
+    const focusAtSend = focusRef.current;
     const mode = readAiSidebarSource();
     setSource(mode);
-    if (mode === "builtin" && !focusRef.current.companionAvailable) {
+    if (mode === "builtin" && !focusAtSend.companionAvailable) {
       setError(t("aiAssistant.sidebar.unavailable"));
       throw new Error("unavailable");
     }
@@ -1084,7 +1130,7 @@ function AiSidebarSession({
         }));
         const activeLocalThreadId = localThreadIdRef.current;
         const transcript = localAgentTranscript(localTurnsRef.current, activeLocalThreadId);
-        const noteContext = contextText();
+        const noteContext = sidebarLocalContextText(focusAtSend, useCurrentNote);
         writeStorage(AI_SIDEBAR_LOCAL_THREAD_KEY, activeLocalThreadId);
         setLocalTurns((previous) => [...previous, {
           id,
@@ -1129,6 +1175,7 @@ function AiSidebarSession({
         const queued = acpBuffer.current.filter((event) => event.requestId === result.requestId);
         acpBuffer.current = acpBuffer.current.filter((event) => event.requestId !== result.requestId);
         for (const event of queued) applyAcpEventRef.current(event);
+        setIncludeCurrentNote(false);
         return id;
       }
 
@@ -1158,6 +1205,7 @@ function AiSidebarSession({
         })),
       }, ...previous]);
       if (active.current?.id === id) active.current.started = true;
+      const focus = sidebarCompanionFocus(focusAtSend, useCurrentNote);
       const payload: CompanionTurnInput = {
         id,
         threadId: activeThreadId,
@@ -1167,8 +1215,9 @@ function AiSidebarSession({
         allowWrites: true,
         locale: companionLocale(i18n.resolvedLanguage),
         ...(uploaded.length ? { attachmentIds: uploaded.map((item) => item.id) } : {}),
-        ...(buildFocus() ? { focus: buildFocus() } : {}),
+        ...(focus ? { focus } : {}),
       };
+      setIncludeCurrentNote(false);
       void (async () => {
         let completed = false;
         try {
@@ -1215,7 +1264,7 @@ function AiSidebarSession({
       setError(explainError(cause));
       throw cause;
     }
-  }, [applyStreamEvent, attachments, buildFocus, contextText, explainError, i18n.resolvedLanguage, recoverTurn, restoreAttachments, t, threadId, useMemory]);
+  }, [applyStreamEvent, attachments, explainError, i18n.resolvedLanguage, includeCurrentNote, recoverTurn, restoreAttachments, t, threadId, useMemory]);
 
   const rememberSelectionTurn = useCallback((id: string, kind: "explain" | "translate") => {
     setSelectionTurnKinds((current) => {
@@ -1442,7 +1491,7 @@ function AiSidebarSession({
           {draft ? <NoteEditDiff before={draft.before} after={draft.after} /> : null}
           {conflicts[action.id] ? <p role="alert" className="text-xs text-rose-700">{conflicts[action.id]}</p> : null}
           <div className="flex gap-2">
-            <Button type="button" size="sm" variant="solid" disabled={running || acting} onClick={() => void applyAction(action)}>
+            <Button type="button" size="sm" variant="solid" className="border-slate-900 bg-slate-900 hover:border-slate-800 hover:bg-slate-800" disabled={running || acting} onClick={() => void applyAction(action)}>
               {t(draft ? "aiAssistant.sidebar.proposalConfirm" : "aiAssistant.sidebar.proposalConfirmOther")}
             </Button>
             <Button type="button" size="sm" variant="outline" disabled={running || acting} onClick={() => void dismissAction(action)}>
@@ -1481,8 +1530,9 @@ function AiSidebarSession({
                   {localAdapterId ? t(`aiAssistant.agentSource.${localAdapterId}`) : t("aiAssistant.sidebar.localStatus")}
                 </span>
               </TooltipTrigger>
-              <TooltipContent>
-                {localAdapterId ? t(`aiAssistant.agentSource.${localAdapterId}`) : t("aiAssistant.sidebar.localStatus")}
+              <TooltipContent className="max-w-xs">
+                <p>{localAdapterId ? t(`aiAssistant.agentSource.${localAdapterId}`) : t("aiAssistant.sidebar.localStatus")}</p>
+                <p className="mt-1">{t("aiAssistant.agentSource.localHint")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -1518,9 +1568,12 @@ function AiSidebarSession({
               </Message>
               <Message from="assistant">
                 {turn.process?.trim() ? (
-                  <Reasoning isStreaming={turn.status === "running"}>
-                    <ReasoningTrigger getThinkingMessage={() => t("companion.process")} />
-                    <ReasoningContent>{turn.process}</ReasoningContent>
+                  <Reasoning isStreaming={turn.status === "running"} className="mb-2">
+                    <ReasoningTrigger
+                      className="-ml-1 min-h-7 w-fit gap-1.5 rounded-sm px-1 py-1 text-xs leading-4 text-slate-500 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&_svg]:size-3"
+                      getThinkingMessage={() => t("companion.process")}
+                    />
+                    <ReasoningContent className="mt-2 text-xs leading-5">{turn.process}</ReasoningContent>
                   </Reasoning>
                 ) : turn.status === "running" ? (
                   <p role="status" className="flex items-center gap-2 text-xs text-slate-500">
@@ -1564,35 +1617,34 @@ function AiSidebarSession({
                 <AttachmentChips items={turn.attachments} />
               </Message>
               <Message from="assistant">
-                {turn.reasoning.trim() ? (
-                  <Reasoning isStreaming={turn.status === "running"}>
-                    <ReasoningTrigger getThinkingMessage={() => t("companion.process")} />
-                    <ReasoningContent>{turn.reasoning}</ReasoningContent>
-                  </Reasoning>
+                {turn.reasoning.trim() || turn.tools.length ? (
+                  <AiSidebarLocalProcess reasoning={turn.reasoning} tools={turn.tools} running={turn.status === "running"} />
                 ) : turn.status === "running" ? (
                   <p role="status" className="flex items-center gap-2 text-xs text-slate-500">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                     {t("aiAssistant.sidebar.working")}
                   </p>
                 ) : null}
-                {turn.tools.length ? (
-                  <ul className="space-y-1 text-xs text-slate-500">
-                    {turn.tools.map((tool) => (
-                      <li key={tool.id}>{t("aiAssistant.sidebar.toolProgress", { name: tool.title || tool.name, status: tool.status })}</li>
-                    ))}
-                  </ul>
-                ) : null}
                 {turn.images.length ? (
                   <div className="flex flex-col gap-2">
-                    {turn.images.map((image) => (
-                      <Image
-                        key={image.id}
-                        alt={t("aiAssistant.sidebar.generatedImage")}
-                        base64={image.base64}
-                        className="max-h-96"
-                        mediaType={image.mediaType}
-                        uint8Array={EMPTY_IMAGE_BYTES}
-                      />
+                    {turn.images.map((image, index) => (
+                      <div key={image.id} className="space-y-1">
+                        <Image
+                          alt={t("aiAssistant.sidebar.generatedImage")}
+                          base64={image.base64}
+                          className="max-h-96"
+                          mediaType={image.mediaType}
+                          uint8Array={EMPTY_IMAGE_BYTES}
+                        />
+                        <a
+                          className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-slate-600 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          download={`edgeever-image-${turn.id.slice(0, 8)}-${index + 1}.${image.mediaType === "image/jpeg" ? "jpg" : image.mediaType === "image/webp" ? "webp" : image.mediaType === "image/gif" ? "gif" : "png"}`}
+                          href={`data:${image.mediaType};base64,${image.base64}`}
+                        >
+                          <Download className="size-3.5" aria-hidden="true" />
+                          {t("aiAssistant.sidebar.downloadImage")}
+                        </a>
+                      </div>
                     ))}
                   </div>
                 ) : null}
@@ -1647,7 +1699,7 @@ function AiSidebarSession({
               size="sm"
               variant="outline"
               disabled={running || acting}
-              onClick={() => void launch(skillPrompt(skill.id)).catch(() => undefined)}
+              onClick={() => void launch(skillPrompt(skill.id), { includeCurrentNote: true }).catch(() => undefined)}
             >
               {t(`aiAssistant.sidebar.skills.${skill.id}`)}
             </Button>
@@ -1659,6 +1711,9 @@ function AiSidebarSession({
             attachmentError={attachmentError}
             busy={running}
             locked={acting}
+            includeCurrentNote={includeCurrentNote}
+            currentNoteAvailable={Boolean(noteTitle?.trim() || contentMarkdown?.trim())}
+            onIncludeCurrentNoteChange={setIncludeCurrentNote}
             placeholder={t("aiAssistant.sidebar.placeholder")}
             onAddFiles={(files) => { void addFiles(files); }}
             onRemoveAttachment={(id) => setAttachments((current) => current.filter((item) => item.localId !== id))}
@@ -1790,7 +1845,15 @@ export function AiSidebar(props: AiSidebarProps) {
               </Tooltip>
             </TooltipProvider>
           ) : null}
-          <AiSidebarSession {...props} addFilesRef={addFilesRef} onStopReady={onStopReady} />
+          {props.infographic ? (
+            <InfographicSidebarSession
+              session={props.infographic}
+              noteTitle={props.noteTitle}
+              onOpenChange={onOpenChange}
+            />
+          ) : (
+            <AiSidebarSession {...props} addFilesRef={addFilesRef} onStopReady={onStopReady} />
+          )}
         </div>
       </m.aside>
     </>

@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
+import { WeChatCopyProgress } from "@/components/WeChatCopyProgress";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
 import { MemoEditorFocusModeButton, MemoEditorTopRowLeading } from "@/components/MemoEditorTopRowLeading";
@@ -4290,6 +4291,8 @@ const RichEditorPane = ({
           {t(memoIdCopyNotice.status === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memoIdCopyNotice.id })}
         </ClipboardCopyNotice>
       )}
+
+      {wechatCopyState === "copying" && <WeChatCopyProgress />}
 
       {(wechatCopyState === "copied" || wechatCopyState === "error") && (
         <ClipboardCopyNotice status={wechatCopyState === "copied" ? "copied" : "error"}>

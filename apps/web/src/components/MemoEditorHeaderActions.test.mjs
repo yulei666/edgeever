@@ -17,8 +17,9 @@ describe("shared memo editor header actions", () => {
     expect(actionsSource).toContain("<GitHubRepositoryLink");
     expect(actionsSource).not.toContain("SystemInfoDialog");
     expect(actionsSource).not.toContain("systemInfo.title");
+    expect(actionsSource).not.toContain("setPreference(nextTheme)");
+    expect(actionsSource).not.toContain('t("common.githubRepository")');
     expect(actionsSource).toContain("<ExecutionCenterButton");
-    expect(actionsSource).toContain("setPreference(nextTheme)");
     expect(actionsSource).toContain("<MoreHorizontal");
   });
 

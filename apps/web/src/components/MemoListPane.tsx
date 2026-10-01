@@ -66,6 +66,7 @@ import {
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MemoCard } from "./MemoCard";
 import { ClipboardCopyNotice } from "./ClipboardCopyNotice";
+import { WeChatCopyProgress } from "./WeChatCopyProgress";
 import { cn } from "@/lib/utils";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
 import type { Notebook, MemoSummary } from "@edgeever/shared";
@@ -520,6 +521,9 @@ export const MemoListPane = ({
   const [moveTargetNotebookId, setMoveTargetNotebookId] = useState("");
   const [memoIdCopyNotice, setMemoIdCopyNotice] = useState<{ status: "copied" | "error"; id: string } | null>(null);
   const [wechatCopyNotice, setWechatCopyNotice] = useState<"copied" | "error" | null>(null);
+  const [wechatCopyPending, setWechatCopyPending] = useState(false);
+  const wechatCopyPendingRef = useRef(false);
+  const wechatCopyNoticeTimerRef = useRef<number | null>(null);
   const [fileDragActive, setFileDragActive] = useState(false);
 
   const filterOptions = useMemo(() => getMemoFilterOptions(t), [t]);
@@ -533,6 +537,12 @@ export const MemoListPane = ({
   const [searchFocused, setSearchFocused] = useState(false);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
   const listRootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => () => {
+    if (wechatCopyNoticeTimerRef.current !== null) {
+      window.clearTimeout(wechatCopyNoticeTimerRef.current);
+    }
+  }, []);
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const [listScrollElement, setListScrollElement] = useState<HTMLDivElement | null>(null);
   const [isDesktopList, setIsDesktopList] = useState(isDesktopViewport);
@@ -662,12 +672,26 @@ export const MemoListPane = ({
 
   const handleCopyContextMemoToWeChat = async () => {
     const memo = memoContextMenu?.memo;
-    if (!memo || memo.diagramKind || memo.structuredTable || memo.infographic) return;
+    if (!memo || memo.diagramKind || memo.structuredTable || memo.infographic || wechatCopyPendingRef.current) return;
     setMemoContextMenu(null);
-    const result = await onCopyMemoToWeChat(memo.id);
-    if (result === "editor") return;
-    setWechatCopyNotice(result);
-    window.setTimeout(() => setWechatCopyNotice(null), result === "copied" ? 2200 : 2600);
+    wechatCopyPendingRef.current = true;
+    if (wechatCopyNoticeTimerRef.current !== null) {
+      window.clearTimeout(wechatCopyNoticeTimerRef.current);
+    }
+    setWechatCopyNotice(null);
+    setWechatCopyPending(true);
+    try {
+      const result = await onCopyMemoToWeChat(memo.id);
+      if (result === "editor") return;
+      setWechatCopyNotice(result);
+      wechatCopyNoticeTimerRef.current = window.setTimeout(() => setWechatCopyNotice(null), result === "copied" ? 2200 : 2600);
+    } catch {
+      setWechatCopyNotice("error");
+      wechatCopyNoticeTimerRef.current = window.setTimeout(() => setWechatCopyNotice(null), 2600);
+    } finally {
+      wechatCopyPendingRef.current = false;
+      setWechatCopyPending(false);
+    }
   };
 
   useEffect(() => {
@@ -1718,6 +1742,8 @@ export const MemoListPane = ({
           {t(memoIdCopyNotice.status === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memoIdCopyNotice.id })}
         </ClipboardCopyNotice>
       )}
+
+      {wechatCopyPending && <WeChatCopyProgress />}
 
       {wechatCopyNotice && (
         <ClipboardCopyNotice status={wechatCopyNotice}>

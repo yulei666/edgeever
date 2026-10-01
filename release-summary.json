@@ -1,29 +1,32 @@
 {
-  "version": "1.94.0",
+  "version": "1.95.0",
   "changes": {
     "en-US": [
-      "Copy a whole note to WeChat from its card menu. The open note includes unsaved edits. Quotes, code, headings, rules, and formulas follow the light editor, and task checkboxes stay visible.",
-      "Note headers no longer show the updated time, and titles stay visible in narrow desktop windows. One toolbar button switches between rich text and Markdown, and its tooltip names the mode that click will open.",
-      "Attachments show a dedicated icon for installers, design files, 3D and CAD models, scripts and logs, certificates and keys, mind maps, ebooks, fonts, disk images, and databases.",
-      "The local Agent shows the selected program name, keeps its chats on this device, and displays generated images in the sidebar. Its settings description is shorter and the connection status is easier to read.",
-      "New web clips on Android and iOS store the source, time, and fetch-failure note in the current app language. Notes already saved stay as they are.",
-      "In-app feedback opens a GitHub issue form with system information already filled in."
+      "Structured tables can now be created and edited through MCP, including table schemas and record operations.",
+      "Note body colors have been refined. The removed Plum palette in saved settings falls back to the default appearance.",
+      "The local Agent now supports Claude Code, OpenClaw, and Hermes. Compatible agents can access notes for the current session; note context is optional, generated images are kept locally, and activity and settings are clearer.",
+      "Copying notes for publishing now shows progress, and copying to WeChat preserves LaTeX formulas.",
+      "Infographics can be generated from the AI sidebar and exported as readable images.",
+      "Changing a password now works from an existing desktop sign-in session.",
+      "The note menu is simpler, with theme and repository rows removed."
     ],
     "zh-CN": [
-      "笔记卡片菜单可以把整篇笔记复制到微信。正在编辑的笔记会带上未保存的修改；引用、代码、标题、分隔线和公式会按浅色编辑器的样子贴过去，任务勾选也会保留。",
-      "笔记标题栏不再显示更新时间，窄窗口里标题也不会被挤没。富文本和 Markdown 改由同一个按钮切换，提示会写明即将打开的模式。",
-      "附件会按类型显示专用图标，覆盖安装包、设计稿、三维与 CAD、脚本和日志、证书密钥、思维导图、电子书、字体、磁盘镜像和数据库。",
-      "本机 Agent 会显示所选程序的名字，对话留在这台设备上，生成的图片也会出现在侧栏。设置里的说明更短，连接状态更清楚。",
-      "Android 和 iOS 新剪藏的网页，来源、时间和抓取失败说明会跟当前应用语言。已经保存的笔记保持原样。",
-      "应用内反馈会打开已经填好系统信息的 GitHub Issue 表单。"
+      "现在可以通过 MCP 创建和编辑结构化表格，包括表结构与记录的增删改查。",
+      "笔记正文配色已调整；此前保存的梅红配色会回退为默认外观。",
+      "本机 Agent 新增 Claude Code、OpenClaw 和 Hermes 支持。兼容的 Agent 可在当前会话访问笔记；当前笔记上下文可选，生成的图片会保存在本机，活动和设置显示也更清楚。",
+      "复制笔记用于发布时会显示进度；复制到微信时会保留 LaTeX 公式。",
+      "现在可以在 AI 侧栏生成信息图，并将其导出为清晰易读的图片。",
+      "使用现有桌面端登录会话时，现在可以正常修改密码。",
+      "笔记菜单移除了主题和仓库条目，内容更简洁。"
     ],
     "ja": [
-      "カードメニューからノート全体を微信へコピーできます。開いているノートは未保存の変更を含み、引用、コード、見出し、区切り線、数式はライトエディタに揃い、タスクのチェックも残ります。",
-      "ノートのヘッダーから更新時刻を外し、狭いウィンドウでもタイトルが見えるようにしました。リッチテキストと Markdown は同じボタンで切り替え、ツールチップには次に開くモードが表示されます。",
-      "添付ファイルは、インストーラ、デザインファイル、3D と CAD、スクリプトとログ、証明書と鍵、マインドマップ、電子書籍、フォント、ディスクイメージ、データベースごとに専用アイコンを表示します。",
-      "ローカル Agent は選択中のプログラム名を表示し、会話をこのデバイスに残し、生成した画像をサイドバーに出します。設定の説明は短くなり、接続状態も見やすくなりました。",
-      "Android と iOS の新しいウェブクリップは、出典、時刻、取得失敗の説明を現在のアプリ言語で保存します。保存済みのノートはそのままです。",
-      "アプリ内のフィードバックは、システム情報を記入済みの GitHub Issue フォームを開きます。"
+      "MCP から構造化テーブルのスキーマとレコードを作成・編集できるようになりました。",
+      "ノート本文の配色を調整しました。保存済みの Plum 配色は標準の外観に戻ります。",
+      "ローカル Agent が Claude Code、OpenClaw、Hermes に対応しました。対応する Agent は現在のセッションでノートにアクセスでき、ノート文脈は任意です。生成画像はローカルに保存され、操作状況と設定も見やすくなりました。",
+      "公開用にノートをコピーすると進行状況が表示され、微信へのコピーでは LaTeX 数式が保持されます。",
+      "AI サイドバーからインフォグラフィックを生成し、読みやすい画像として書き出せます。",
+      "既存のデスクトップのログインセッションからパスワードを変更できるようになりました。",
+      "ノートメニューからテーマとリポジトリの項目を外し、表示を簡潔にしました。"
     ]
   }
 }
