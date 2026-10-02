@@ -49,6 +49,9 @@ export type DesktopAcpPromptInput = {
   prompt: string;
   contextText?: string;
   attachments?: DesktopAcpAttachment[];
+  // Infographic edits apply a validated proposal in the editor. They must not
+  // also grant the agent write access to the note document.
+  noteAccess?: boolean;
 };
 
 export type DesktopAcpPromptResult = {
@@ -74,6 +77,39 @@ export const AI_SIDEBAR_ADAPTER_KEY = "edgeever.aiSidebar.adapterId";
 export const AI_SIDEBAR_ADAPTER_PATH_KEY = "edgeever.aiSidebar.adapterPath";
 
 export type AiSidebarSource = "builtin" | "local";
+
+const AI_SIDEBAR_ADAPTER_IDS = new Set<string>([
+  "codex", "claudeCode", "antigravity", "openClaw", "hermesAgent", "grokBuild", "deepseekHarness", "piAgent", "workbuddyCn", "workbuddyIntl",
+]);
+
+export const aiSidebarSourceFromStorage = (value: string | null, desktopAvailable: boolean): AiSidebarSource => (
+  value === "local" && desktopAvailable ? "local" : "builtin"
+);
+
+export const aiSidebarAdapterFromStorage = (id: string | null, path: string | null): { id: DesktopAcpAdapterId; path?: string } | null => {
+  if (!id || !AI_SIDEBAR_ADAPTER_IDS.has(id)) return null;
+  const adapterId = id as DesktopAcpAdapterId;
+  const trimmed = path?.trim() ?? "";
+  return adapterId === "antigravity" && trimmed ? { id: adapterId, path: trimmed } : { id: adapterId };
+};
+
+const readStorageItem = (key: string) => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+export const readAiSidebarSource = (): AiSidebarSource => (
+  aiSidebarSourceFromStorage(readStorageItem(AI_SIDEBAR_SOURCE_KEY), desktopAcpAvailable())
+);
+
+export const readAiSidebarAdapter = () => aiSidebarAdapterFromStorage(
+  readStorageItem(AI_SIDEBAR_ADAPTER_KEY),
+  readStorageItem(AI_SIDEBAR_ADAPTER_PATH_KEY),
+);
 
 const bridge = () => (typeof window === "undefined" ? undefined : window.edgeeverDesktop);
 

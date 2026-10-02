@@ -1,32 +1,38 @@
 {
-  "version": "1.96.0",
+  "version": "1.97.0",
   "changes": {
     "en-US": [
-      "Rich text editing now turns typed checklist markers into checkboxes and paired dollar signs into formulas while leaving currency amounts as text.",
-      "Backup imports now restore Office attachments correctly.",
-      "The browser extension can save GitHub repositories, Xiaohongshu notes, and Zhihu answers or articles from the context menu.",
-      "Infographic notes now offer an interactive template gallery with live previews.",
-      "Reading layouts give notes more room beside the AI sidebar, and wide Mermaid diagrams fit the note column with improved scrolling and contrast.",
-      "The AI sidebar now shows the active built-in agent and model.",
-      "Desktop agent sign-in and connection handling are clearer and more reliable, including WorkBuddy and Antigravity, and compatible tool permission requests are handled during prompts."
+      "Choose whether notebook views include notes from sub-notebooks across Web, Android, and iOS.",
+      "Create infographic notes through MCP and the AI companion; desktop infographic conversations now follow the selected agent mode and preserve custom titles.",
+      "Infographic notes show cleaner labels and the correct icons in desktop note lists.",
+      "The AI assistant is available in diagram and table notes, opens note links in the workspace, and saves new companion notes to the inbox without an extra prompt.",
+      "Android sharing now handles incoming file streams more reliably and reports shares it cannot resolve.",
+      "Diagram editing no longer exposes the background when expanded, and the demo sequence diagram renders without overlap.",
+      "Plugin settings can display localized field names and options.",
+      "New note images now use medium display width by default.",
+      "Interface and reading preferences have clearer labels and layout, including the Mermaid theme setting."
     ],
     "zh-CN": [
-      "富文本编辑现在可将输入的清单标记转为复选框、成对美元符号转为公式，并保留金额文本。",
-      "导入备份时，现在可以正确恢复 Office 附件。",
-      "浏览器扩展现在可通过右键菜单保存 GitHub 仓库、小红书笔记，以及知乎回答或文章。",
-      "信息图笔记新增交互式模板库和实时预览。",
-      "AI 侧栏打开时，阅读布局会为笔记留出更多空间；宽幅 Mermaid 图表也更易在正文列中查看，滚动与对比度得到改善。",
-      "AI 侧栏现在会显示当前内置 Agent 和模型。",
-      "桌面端 Agent 的登录和连接处理更加清晰可靠，包括 WorkBuddy 与 Antigravity；兼容的工具权限请求会在对话中处理。"
+      "现在可选择笔记本视图是否显示子笔记本中的笔记，适用于 Web、Android 和 iOS。",
+      "现在可通过 MCP 和 AI 助手创建信息图笔记；桌面端信息图对话会遵循所选 Agent 模式，并保留自定义标题。",
+      "信息图笔记列表标签更加简洁，桌面端图标显示正确。",
+      "图表和表格笔记现在可使用 AI 助手；助手中的笔记链接会在工作区打开，新建笔记可直接存入收件箱。",
+      "Android 分享现在能更可靠地处理传入文件，并提示无法解析的分享内容。",
+      "展开图表编辑器时不再露出背景，Demo 中的时序图也不再重叠。",
+      "插件设置现在可以显示本地化的字段名称和选项。",
+      "笔记中新添加的图片现在默认以中等宽度显示。",
+      "界面与阅读偏好的名称和布局更加清晰，包括 Mermaid 主题设置。"
     ],
     "ja": [
-      "リッチテキスト編集でチェックリスト記号がチェックボックスに、対になったドル記号が数式に変換され、金額はテキストのまま残ります。",
-      "バックアップの読み込みで Office 添付ファイルを正しく復元できるようになりました。",
-      "ブラウザー拡張機能の右クリックメニューから GitHub リポジトリ、小紅書の投稿、知乎の回答や記事を保存できます。",
-      "インフォグラフィックノートに、ライブプレビュー付きの対話型テンプレートギャラリーが加わりました。",
-      "AI サイドバーを開いてもノート本文の表示領域を確保し、幅広い Mermaid 図もスクロールとコントラストを改善して本文内で見やすくしました。",
-      "AI サイドバーに現在の組み込みエージェントとモデルが表示されます。",
-      "WorkBuddy と Antigravity を含むデスクトップエージェントのログインと接続処理を改善し、対応するツールの権限要求を会話中に処理できるようにしました。"
+      "Web、Android、iOS で、ノートブックに子ノートブックのノートを表示するか選べるようになりました。",
+      "MCP と AI アシスタントからインフォグラフィックノートを作成できるようになり、デスクトップでは選択中のエージェントモードとカスタムタイトルを維持します。",
+      "インフォグラフィックノートの一覧表示を整理し、デスクトップで正しいアイコンを表示します。",
+      "図と表のノートで AI アシスタントを使えるようになり、ノートのリンクはワークスペースで開き、新しいノートは追加確認なしで受信箱に保存されます。",
+      "Android の共有で受信ファイルをより確実に処理し、読み取れない共有内容を通知します。",
+      "図エディターを拡大しても背景が露出せず、デモのシーケンス図も重ならなくなりました。",
+      "プラグイン設定で項目名と選択肢をローカライズして表示できるようになりました。",
+      "ノートに新しく追加する画像は、既定で中サイズの幅で表示されます。",
+      "Mermaid のテーマ設定を含め、画面と閲覧の設定名や配置を分かりやすくしました。"
     ]
   }
 }

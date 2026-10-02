@@ -20,10 +20,12 @@ import { MEMO_EDITOR_METADATA_ROW_CLASS_NAME, MEMO_EDITOR_TOP_ROW_CLASS_NAME, ne
 import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { api } from "@/lib/api";
+import { readAiSidebarAdapter, readAiSidebarSource } from "@/lib/desktop-acp";
+import { buildInfographicLocalAgentContext, collectInfographicLocalAgentText, infographicLocalAgentErrorKey, parseInfographicLocalReply } from "@/lib/infographic-local-agent";
 import { formatShortcutBinding, getNotebookMoveOptions, type ShortcutSettings } from "@/lib/app-helpers";
 import { createLocalEditSession, requiresLocalEditSession } from "@/components/editor/editor-pane-helpers";
 import { canvasToPngBlob, downloadBlob, frameInfographicExportSvg, infographicExportBasename, rasterizeInfographicSvg, readInfographicSheetColor } from "@/lib/infographic-image-export";
-import { buildInfographicSyntax, buildOfficialInfographicSyntax, infographicAgentCandidates, INFOGRAPHIC_TEMPLATES, parseGeneratedOfficialData, type InfographicItem } from "@/lib/infographic-generation";
+import { buildInfographicSyntax, buildOfficialInfographicSyntax, infographicAgentCandidates, infographicNoteTitleIsAutomatic, infographicSyntaxTitle, INFOGRAPHIC_TEMPLATES, nextInfographicNoteTitle, parseGeneratedOfficialData, type InfographicItem } from "@/lib/infographic-generation";
 import { statusSettleMotion } from "@/lib/motion";
 import type { EdgeEverRepository } from "@/lib/repository";
 import { cn, parseTagsText } from "@/lib/utils";
@@ -40,6 +42,7 @@ type Props = {
   onToggleDesktopFocusMode: () => void;
   aiAssistantOpenToken: number;
   shortcutSettings: ShortcutSettings;
+  onOpenCompanionNote?: (id: string, notebookId: string) => void;
 };
 
 const plainLine = (value: string) => value.replace(/\s+/g, " ").trim();
@@ -195,11 +198,18 @@ export default function InfographicEditorPane({
   onToggleDesktopFocusMode,
   aiAssistantOpenToken,
   shortcutSettings,
+  onOpenCompanionNote,
 }: Props) {
   const { t, i18n } = useTranslation();
   const parsed = useMemo(() => parseInfographicDocument(memo.contentMarkdown), [memo.contentMarkdown]);
   const initialTags = memo.tags.join(", ");
   const [title, setTitle] = useState(memo.title ?? "");
+  const titleEditedByUserRef = useRef(!infographicNoteTitleIsAutomatic({
+    noteTitle: memo.title ?? "",
+    graphicTitle: infographicSyntaxTitle(parsed?.syntax ?? ""),
+    defaultTitle: t("infographic.name"),
+    earlierTitles: (parsed?.history ?? []).map((turn) => turn.resultTitle),
+  }));
   const [tagsText, setTagsText] = useState(initialTags);
   const [syntax, setSyntax] = useState(parsed?.syntax ?? "");
   const [history, setHistory] = useState<InfographicConversationTurn[]>(parsed?.history ?? []);
@@ -481,14 +491,55 @@ export default function InfographicEditorPane({
       if (currentContent.length > INFOGRAPHIC_AGENT_SOURCE_MAX_LENGTH) throw new Error(t("infographic.contentTooLarge"));
       const candidates = infographicAgentCandidates(promptText, getTemplates(), existingTemplate);
       if (!candidates.length) throw new Error(t("infographic.aiInvalidResponse"));
-      await api.streamInfographicAgent({
+      const agentHistory = history.filter((turn) => !turn.undoneAt && turn.kind !== "failed")
+        .slice(-12).map((turn) => ({ prompt: turn.prompt, response: `${turn.kind === "clarified" ? "No infographic change was applied. Clarification: " : ""}${turn.response || turn.resultTitle}${turn.decision ? `\nDecision: ${turn.decision}` : ""}`.slice(0, 2000) }));
+      if (readAiSidebarSource() === "local") {
+        const adapter = readAiSidebarAdapter();
+        if (!adapter) throw new Error(t("aiAssistant.sidebar.localMissing"));
+        let raw = "";
+        try {
+          raw = await collectInfographicLocalAgentText({
+            request: {
+              adapterId: adapter.id,
+              ...(adapter.path ? { path: adapter.path } : {}),
+              prompt: promptText,
+              contextText: buildInfographicLocalAgentContext({
+                prompt: promptText,
+                ...(existingTemplate ? { currentTemplate: existingTemplate } : {}),
+                currentContent,
+                candidates,
+                history: agentHistory,
+              }),
+              noteAccess: false,
+            },
+            signal: controller.signal,
+            onText: (text) => {
+              response = text;
+              setActiveTurn((current) => current ? { ...current, response: text } : current);
+            },
+          });
+        } catch (caught) {
+          if (controller.signal.aborted) throw caught;
+          const message = caught instanceof Error ? caught.message : "";
+          const key = infographicLocalAgentErrorKey(message, adapter.id);
+          throw new Error(key ? t(key) : message || t("infographic.aiError"));
+        }
+        const reply = parseInfographicLocalReply(raw, candidates, promptText);
+        response = reply.visibleText;
+        if (reply.proposal) {
+          proposal = reply.proposal;
+          setActiveTurn((current) => current ? { ...current, response, template: reply.proposal?.template, decision: reply.proposal?.explanation } : current);
+        } else if (reply.question) {
+          question = reply.question;
+          setActiveTurn((current) => current ? { ...current, response, question } : current);
+        } else throw new Error(t("infographic.aiInvalidResponse"));
+      } else await api.streamInfographicAgent({
         prompt: promptText,
         locale: i18n.resolvedLanguage,
         ...(existingTemplate ? { currentTemplate: existingTemplate } : {}),
         currentContent,
         candidates,
-        history: history.filter((turn) => !turn.undoneAt && turn.kind !== "failed")
-          .slice(-12).map((turn) => ({ prompt: turn.prompt, response: `${turn.kind === "clarified" ? "No infographic change was applied. Clarification: " : ""}${turn.response || turn.resultTitle}${turn.decision ? `\nDecision: ${turn.decision}` : ""}`.slice(0, 2000) })),
+        history: agentHistory,
       }, { signal: controller.signal, onEvent: (event) => {
         if (event.type === "text-delta") {
           response += event.text;
@@ -515,6 +566,14 @@ export default function InfographicEditorPane({
         if (parsedCandidate.errors.length || !parsedCandidate.options.template || !getTemplate(parsedCandidate.options.template)) throw new Error(t("infographic.aiInvalidResponse"));
         const generatedTitle = String(data.title ?? "");
         const turnId = crypto.randomUUID();
+        const previousGraphicTitle = String(existingOptions.data?.title ?? "");
+        const nextTitle = nextInfographicNoteTitle({
+          noteTitle: title,
+          previousGraphicTitle,
+          nextGraphicTitle: generatedTitle,
+          defaultTitle: t("infographic.name"),
+          keepCustomTitle: titleEditedByUserRef.current,
+        });
         setPreviousGeneration({ title, syntax, turnId });
         setHistory((turns) => [...turns, {
           id: turnId, prompt: promptText, createdAt: new Date().toISOString(),
@@ -522,8 +581,7 @@ export default function InfographicEditorPane({
           response: (response.trim() || selected.explanation).slice(0, 4000), decision: selected.explanation.slice(0, 500), template: selected.template,
         }]);
         setSyntax(candidate);
-        const previousGraphicTitle = String(existingOptions.data?.title ?? "").trim();
-        if (!title.trim() || title.trim() === t("infographic.name") || (previousGraphicTitle && title.trim() === previousGraphicTitle)) setTitle(generatedTitle);
+        if (nextTitle !== title) setTitle(nextTitle);
       } else if (question) {
         setHistory((turns) => [...turns, { id: crypto.randomUUID(), prompt: promptText, createdAt: new Date().toISOString(), kind: "clarified", resultTitle: "", response: (response.trim() || question).slice(0, 4000) }]);
       } else throw new Error(t("infographic.aiInvalidResponse"));
@@ -584,7 +642,7 @@ export default function InfographicEditorPane({
                 </IconTooltip>
               )}
               titleInput={(
-                <MemoTitleInput className="w-full min-w-0 px-2" value={title} onValueChange={setTitle} placeholder={t("infographic.name")} readOnly={readOnly} />
+                <MemoTitleInput className="w-full min-w-0 px-2" value={title} onValueChange={(value) => { titleEditedByUserRef.current = true; setTitle(value); }} placeholder={t("infographic.name")} readOnly={readOnly} />
               )}
             />
             <MemoEditorMetadataRow
@@ -729,6 +787,7 @@ export default function InfographicEditorPane({
         notebookId={memo.notebookId}
         noteTitle={title}
         infographic={infographicAssistant}
+        onOpenCompanionNote={onOpenCompanionNote}
       />
     </AiSidebarErrorBoundary>
     <Dialog open={galleryDialogOpen} onOpenChange={setGalleryDialogOpen}>

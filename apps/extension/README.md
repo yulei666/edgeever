@@ -56,6 +56,10 @@ bun run package:extension:firefox
 
 The archive is written to `apps/extension/web-ext-artifacts`. Firefox requires AMO signing for normal installation. The manifest supports Firefox Desktop 140 or later and Firefox for Android 142 or later so Mozilla's built-in data-transmission consent UI is available.
 
+## Store submission
+
+Chrome and Edge share one Chrome Web Store item. Firefox is submitted separately. From the repository root, the official workflow **Submit Web Clipper** builds and submits both. See [Web Clipper store submission](../../docs/extension-store.md). Increase the `version` in `package.json` before submitting; an uploaded version cannot be replaced.
+
 ## Firefox data disclosure
 
 The Firefox package declares the data types required by its user-triggered clipping function:

@@ -915,7 +915,7 @@ export function createAcpHostRuntime(options = {}) {
       let mcpBridge;
       try {
         // OpenClaw's ACP Gateway bridge rejects session-scoped MCP servers.
-        if (options.mcpAccess && input.adapterId !== "openClaw") {
+        if (options.mcpAccess && input.noteAccess !== false && input.adapterId !== "openClaw") {
           const access = await options.mcpAccess();
           mcpBridge = await (options.startMcpBridge ?? startAcpMcpBridge)(access);
         }

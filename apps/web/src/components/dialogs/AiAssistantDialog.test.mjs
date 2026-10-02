@@ -18,8 +18,15 @@ describe("AI assistant modes", () => {
     expect(sidebar).toContain("<InfographicSidebarSession");
     expect(sidebar).toContain("<BuiltinAgentStatus");
     const infographic = readFileSync(new URL("../ai-sidebar/InfographicSidebarSession.tsx", import.meta.url), "utf8");
+    const mode = readFileSync(new URL("../ai-sidebar/SidebarAgentModeStatus.tsx", import.meta.url), "utf8");
     const status = readFileSync(new URL("../ai-sidebar/BuiltinAgentStatus.tsx", import.meta.url), "utf8");
-    expect(infographic).toContain("<BuiltinAgentStatus");
+    const pane = readFileSync(new URL("../InfographicEditorPane.tsx", import.meta.url), "utf8");
+    expect(infographic).toContain("<SidebarAgentModeStatus");
+    expect(mode).toContain("readAiSidebarSource");
+    expect(mode).toContain("<BuiltinAgentStatus");
+    expect(mode).toContain('data-ai-local-agent=""');
+    expect(pane).toContain('readAiSidebarSource() === "local"');
+    expect(pane).toContain("noteAccess: false");
     expect(status).toContain('data-ai-builtin-agent=""');
     expect(status).toContain('t("aiAssistant.agentSource.builtin")');
     expect(status).toContain('t("aiModel.noDefaultModel")');

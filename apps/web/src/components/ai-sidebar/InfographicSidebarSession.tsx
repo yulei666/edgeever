@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { PanelRightClose, Sparkles, Undo2 } from "lucide-react";
+import type { MouseEvent } from "react";
 import type { InfographicConversationTurn } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
 import { Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -14,7 +15,8 @@ import {
   usePromptInputController,
 } from "@/components/ai-elements/prompt-input";
 import { cn } from "@/lib/utils";
-import { BuiltinAgentStatus } from "./BuiltinAgentStatus";
+import { SidebarAgentModeStatus } from "./SidebarAgentModeStatus";
+import { memoIdFromSidebarLinkEvent, rewriteSidebarNoteLinks, sidebarNoteLinkAllowedTags, sidebarNoteLinkComponents } from "./sidebar-note-links";
 
 const threadClassName = cn(
   "gap-3 p-3 text-[13px] leading-[1.6]",
@@ -89,17 +91,37 @@ function InfographicSidebarComposer({ session }: { session: InfographicSidebarCo
   );
 }
 
+function InfographicReply({ children, isAnimating }: { children: string; isAnimating?: boolean }) {
+  return (
+    <MessageResponse
+      allowedTags={sidebarNoteLinkAllowedTags}
+      className="edgeever-infographic-chat-response break-words"
+      components={sidebarNoteLinkComponents}
+      isAnimating={isAnimating}
+    >
+      {rewriteSidebarNoteLinks(children)}
+    </MessageResponse>
+  );
+}
+
 export function InfographicSidebarSession({
   session,
   noteTitle,
   onOpenChange,
+  onOpenNote,
 }: {
   session: InfographicSidebarController;
   noteTitle?: string;
   onOpenChange: (open: boolean) => void;
+  onOpenNote?: (memoId: string, notebookId: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const title = noteTitle?.trim() || t("infographic.name");
+  const openLinkedNote = (event: MouseEvent<HTMLElement>) => {
+    const linkedId = memoIdFromSidebarLinkEvent(event);
+    if (!linkedId || !onOpenNote) return;
+    onOpenNote(linkedId, "");
+  };
   const reply = (turn: InfographicConversationTurn) => turn.response
     || (turn.kind === "clarified"
       ? t("infographic.historyClarified")
@@ -114,7 +136,7 @@ export function InfographicSidebarSession({
           <Sparkles className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{title}</span>
         </span>
-        <BuiltinAgentStatus />
+        <SidebarAgentModeStatus />
         <Button
           type="button"
           size="icon-sm"
@@ -127,7 +149,7 @@ export function InfographicSidebarSession({
         </Button>
       </div>
       <Conversation className="min-h-0 flex-1" aria-label={t("infographic.historyTitle")}>
-        <ConversationContent className={threadClassName}>
+        <ConversationContent className={threadClassName} onClick={openLinkedNote}>
           {!session.turns.length && !session.activeTurn ? (
             <ConversationEmptyState
               icon={<Sparkles className="h-6 w-6" />}
@@ -142,7 +164,7 @@ export function InfographicSidebarSession({
               </Message>
               <Message from="assistant">
                 <MessageContent className="w-full text-foreground">
-                  <MessageResponse className="edgeever-infographic-chat-response break-words">{reply(turn)}</MessageResponse>
+                  <InfographicReply>{reply(turn)}</InfographicReply>
                   {turn.decision && turn.decision !== turn.response ? <p className="text-xs text-slate-600">{turn.decision}</p> : null}
                   {turn.template ? <p className="text-xs text-slate-500">{turn.template}</p> : null}
                   {turn.error ? <p className="text-xs text-red-600">{turn.error}</p> : null}
@@ -159,9 +181,9 @@ export function InfographicSidebarSession({
               </Message>
               <Message from="assistant">
                 <MessageContent className="w-full text-foreground">
-                  <MessageResponse className="edgeever-infographic-chat-response break-words" isAnimating={session.generating}>
+                  <InfographicReply isAnimating={session.generating}>
                     {session.activeTurn.response || session.activeTurn.question || t("infographic.generating")}
-                  </MessageResponse>
+                  </InfographicReply>
                   {session.activeTurn.decision && session.activeTurn.decision !== session.activeTurn.response ? <p className="text-xs text-slate-600">{session.activeTurn.decision}</p> : null}
                   {session.activeTurn.template ? <p className="text-xs text-slate-500">{session.activeTurn.template}</p> : null}
                 </MessageContent>

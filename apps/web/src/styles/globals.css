@@ -724,6 +724,15 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   height: auto !important;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  background-color: var(--edgeever-diagram-canvas, transparent);
+}
+
+/* The scroller sizes its paper once. When the editor column later grows
+ * (assistant sidebar closing, pane resize), keep the dotted surface covering
+ * the viewport instead of leaving the card color exposed on the right. */
+.edgeever-diagram-scroller > .x6-graph-scroller-content {
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .edgeever-diagram-scroller .edgeever-diagram-canvas {
