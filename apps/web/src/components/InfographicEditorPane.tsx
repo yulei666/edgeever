@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronLeft, Download, FileCode2, FileImage, LoaderCircle, Pencil, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, Download, FileCode2, FileImage, LayoutTemplate, LoaderCircle, Pencil, Sparkles } from "lucide-react";
 import * as m from "motion/react-m";
 import { useTranslation } from "react-i18next";
 import { INFOGRAPHIC_AGENT_SOURCE_MAX_LENGTH, markdownToDoc, infographicFallbackMarkdown, parseInfographicDocument, serializeInfographicDocument, type InfographicConversationTurn, type InfographicDocument, type MemoDetail, type MemoEditSession, type Notebook } from "@edgeever/shared";
 import type { Infographic as InfographicInstance, SyntaxParseResult } from "@antv/infographic";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { InfographicGallery } from "./InfographicGallery";
+import type { InfographicSample } from "@/lib/infographic-samples";
 import { AiSidebar, readAiSidebarOpen, writeAiSidebarOpen } from "@/components/ai-sidebar/AiSidebar";
 import { AiSidebarErrorBoundary } from "@/components/ai-sidebar/AiSidebarErrorBoundary";
 import type { InfographicSidebarController } from "@/components/ai-sidebar/InfographicSidebarSession";
@@ -211,6 +214,7 @@ export default function InfographicEditorPane({
   const [ready, setReady] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify([memo.title ?? "", parsed?.syntax ?? "", parsed?.history ?? [], initialTags]));
   const [savedHistorySnapshot, setSavedHistorySnapshot] = useState(JSON.stringify(parsed?.history ?? []));
+  const [galleryDialogOpen, setGalleryDialogOpen] = useState(false);
   const [mobileNotebookSheetOpen, setMobileNotebookSheetOpen] = useState(false);
   const [notebookUpdatePending, setNotebookUpdatePending] = useState(false);
   const [headerTitleSlot, setHeaderTitleSlot] = useState<HTMLDivElement | null>(null);
@@ -355,6 +359,21 @@ export default function InfographicEditorPane({
     setHistory((turns) => turns.map((turn) => turn.id === previousGeneration.turnId ? { ...turn, undoneAt: new Date().toISOString() } : turn));
     setPreviousGeneration(null);
     setError(null);
+  };
+
+  const handleApplySample = (sample: InfographicSample, sampleSyntax: string, sampleTitle: string) => {
+    if (readOnly) return;
+    if (syntax.trim() && !window.confirm(t("infographic.galleryConfirmReplace"))) {
+      return;
+    }
+    setPreviousGeneration(null);
+    setSyntax(sampleSyntax);
+    if (!title.trim() || title.trim() === t("infographic.name")) {
+      setTitle(sampleTitle);
+    }
+    setGalleryDialogOpen(false);
+    setError(null);
+    setRenderError(null);
   };
 
   const save = async () => {
@@ -603,6 +622,17 @@ export default function InfographicEditorPane({
           <MemoEditorToolbarDivider className="mx-0.5 hidden h-4 sm:block" />
           <div className="flex items-center gap-0.5">
             <MemoEditorFocusModeButton desktopFocusMode={desktopFocusMode} onToggleDesktopFocusMode={onToggleDesktopFocusMode} />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 px-2 text-xs"
+              onClick={() => setGalleryDialogOpen(true)}
+              aria-label={t("infographic.galleryTemplatesButton")}
+            >
+              <LayoutTemplate className="h-4 w-4 text-slate-500" />
+              <span className="hidden sm:inline">{t("infographic.galleryTemplatesButton")}</span>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -634,6 +664,10 @@ export default function InfographicEditorPane({
               onOpenExecutionCenter={onOpenExecutionCenter}
               moreMenuItems={(
                 <>
+                  <DropdownMenuItem onClick={() => setGalleryDialogOpen(true)}>
+                    <LayoutTemplate className="h-4 w-4 text-slate-500" />
+                    {t("infographic.galleryTitle")}
+                  </DropdownMenuItem>
                   <DropdownMenuItem disabled={!previewReady || Boolean(renderError)} onClick={() => void exportImage("svg")}>
                     <FileCode2 className="h-4 w-4 text-slate-500" />
                     {t("infographic.exportSvg")}
@@ -651,11 +685,20 @@ export default function InfographicEditorPane({
     </header>
     {error ? <p role="alert" className="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-700">{error}</p> : null}
     <section className="min-h-0 flex-1 overflow-auto bg-slate-50 p-4">
-      <div className={`relative flex min-h-full flex-col rounded-xl border border-slate-200 p-4 shadow-sm ${previewUsesLightSheet ? "bg-white" : "bg-card"}`}>
-        <div ref={containerRef} className="edgeever-infographic-preview min-h-[380px] w-full flex-1" />
-        {!syntax.trim() ? <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-muted-foreground">{t("infographic.noPreview")}</p> : null}
-        {renderError ? <p role="alert" className="text-sm text-destructive">{renderError}</p> : null}
-      </div>
+      {!syntax.trim() ? (
+        <div className="relative min-h-full rounded-xl border border-slate-200 bg-white p-2 sm:p-4 shadow-sm">
+          <div ref={containerRef} className="edgeever-infographic-preview hidden" />
+          <InfographicGallery
+            readOnly={readOnly}
+            onSelect={handleApplySample}
+          />
+        </div>
+      ) : (
+        <div className={`relative flex min-h-full flex-col rounded-xl border border-slate-200 p-4 shadow-sm ${previewUsesLightSheet ? "bg-white" : "bg-card"}`}>
+          <div ref={containerRef} className="edgeever-infographic-preview min-h-[380px] w-full flex-1" />
+          {renderError ? <p role="alert" className="text-sm text-destructive">{renderError}</p> : null}
+        </div>
+      )}
     </section>
     {!readOnly && !aiAssistantOpen ? (
       <IconTooltip
@@ -688,5 +731,18 @@ export default function InfographicEditorPane({
         infographic={infographicAssistant}
       />
     </AiSidebarErrorBoundary>
+    <Dialog open={galleryDialogOpen} onOpenChange={setGalleryDialogOpen}>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{t("infographic.galleryTitle")}</DialogTitle>
+          <DialogDescription>{t("infographic.galleryTitle")}</DialogDescription>
+        </DialogHeader>
+        <InfographicGallery
+          readOnly={readOnly}
+          isDialog
+          onSelect={handleApplySample}
+        />
+      </DialogContent>
+    </Dialog>
   </div>;
 }

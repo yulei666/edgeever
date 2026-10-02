@@ -14,6 +14,7 @@ import {
   usePromptInputController,
 } from "@/components/ai-elements/prompt-input";
 import { cn } from "@/lib/utils";
+import { BuiltinAgentStatus } from "./BuiltinAgentStatus";
 
 const threadClassName = cn(
   "gap-3 p-3 text-[13px] leading-[1.6]",
@@ -109,12 +110,12 @@ export function InfographicSidebarSession({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-card" data-infographic-ai-sidebar="">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-200 px-2">
-        <span className="flex min-w-0 items-center gap-1.5 px-1.5 text-[13px] text-slate-800">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 text-[13px] text-slate-800">
           <Sparkles className="size-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{title}</span>
         </span>
+        <BuiltinAgentStatus />
         <Button
-          className="ml-auto"
           type="button"
           size="icon-sm"
           variant="ghost"

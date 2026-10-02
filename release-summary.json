@@ -1,32 +1,32 @@
 {
-  "version": "1.95.0",
+  "version": "1.96.0",
   "changes": {
     "en-US": [
-      "Structured tables can now be created and edited through MCP, including table schemas and record operations.",
-      "Note body colors have been refined. The removed Plum palette in saved settings falls back to the default appearance.",
-      "The local Agent now supports Claude Code, OpenClaw, and Hermes. Compatible agents can access notes for the current session; note context is optional, generated images are kept locally, and activity and settings are clearer.",
-      "Copying notes for publishing now shows progress, and copying to WeChat preserves LaTeX formulas.",
-      "Infographics can be generated from the AI sidebar and exported as readable images.",
-      "Changing a password now works from an existing desktop sign-in session.",
-      "The note menu is simpler, with theme and repository rows removed."
+      "Rich text editing now turns typed checklist markers into checkboxes and paired dollar signs into formulas while leaving currency amounts as text.",
+      "Backup imports now restore Office attachments correctly.",
+      "The browser extension can save GitHub repositories, Xiaohongshu notes, and Zhihu answers or articles from the context menu.",
+      "Infographic notes now offer an interactive template gallery with live previews.",
+      "Reading layouts give notes more room beside the AI sidebar, and wide Mermaid diagrams fit the note column with improved scrolling and contrast.",
+      "The AI sidebar now shows the active built-in agent and model.",
+      "Desktop agent sign-in and connection handling are clearer and more reliable, including WorkBuddy and Antigravity, and compatible tool permission requests are handled during prompts."
     ],
     "zh-CN": [
-      "现在可以通过 MCP 创建和编辑结构化表格，包括表结构与记录的增删改查。",
-      "笔记正文配色已调整；此前保存的梅红配色会回退为默认外观。",
-      "本机 Agent 新增 Claude Code、OpenClaw 和 Hermes 支持。兼容的 Agent 可在当前会话访问笔记；当前笔记上下文可选，生成的图片会保存在本机，活动和设置显示也更清楚。",
-      "复制笔记用于发布时会显示进度；复制到微信时会保留 LaTeX 公式。",
-      "现在可以在 AI 侧栏生成信息图，并将其导出为清晰易读的图片。",
-      "使用现有桌面端登录会话时，现在可以正常修改密码。",
-      "笔记菜单移除了主题和仓库条目，内容更简洁。"
+      "富文本编辑现在可将输入的清单标记转为复选框、成对美元符号转为公式，并保留金额文本。",
+      "导入备份时，现在可以正确恢复 Office 附件。",
+      "浏览器扩展现在可通过右键菜单保存 GitHub 仓库、小红书笔记，以及知乎回答或文章。",
+      "信息图笔记新增交互式模板库和实时预览。",
+      "AI 侧栏打开时，阅读布局会为笔记留出更多空间；宽幅 Mermaid 图表也更易在正文列中查看，滚动与对比度得到改善。",
+      "AI 侧栏现在会显示当前内置 Agent 和模型。",
+      "桌面端 Agent 的登录和连接处理更加清晰可靠，包括 WorkBuddy 与 Antigravity；兼容的工具权限请求会在对话中处理。"
     ],
     "ja": [
-      "MCP から構造化テーブルのスキーマとレコードを作成・編集できるようになりました。",
-      "ノート本文の配色を調整しました。保存済みの Plum 配色は標準の外観に戻ります。",
-      "ローカル Agent が Claude Code、OpenClaw、Hermes に対応しました。対応する Agent は現在のセッションでノートにアクセスでき、ノート文脈は任意です。生成画像はローカルに保存され、操作状況と設定も見やすくなりました。",
-      "公開用にノートをコピーすると進行状況が表示され、微信へのコピーでは LaTeX 数式が保持されます。",
-      "AI サイドバーからインフォグラフィックを生成し、読みやすい画像として書き出せます。",
-      "既存のデスクトップのログインセッションからパスワードを変更できるようになりました。",
-      "ノートメニューからテーマとリポジトリの項目を外し、表示を簡潔にしました。"
+      "リッチテキスト編集でチェックリスト記号がチェックボックスに、対になったドル記号が数式に変換され、金額はテキストのまま残ります。",
+      "バックアップの読み込みで Office 添付ファイルを正しく復元できるようになりました。",
+      "ブラウザー拡張機能の右クリックメニューから GitHub リポジトリ、小紅書の投稿、知乎の回答や記事を保存できます。",
+      "インフォグラフィックノートに、ライブプレビュー付きの対話型テンプレートギャラリーが加わりました。",
+      "AI サイドバーを開いてもノート本文の表示領域を確保し、幅広い Mermaid 図もスクロールとコントラストを改善して本文内で見やすくしました。",
+      "AI サイドバーに現在の組み込みエージェントとモデルが表示されます。",
+      "WorkBuddy と Antigravity を含むデスクトップエージェントのログインと接続処理を改善し、対応するツールの権限要求を会話中に処理できるようにしました。"
     ]
   }
 }
