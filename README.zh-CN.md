@@ -282,9 +282,8 @@ Web、PWA 与桌面端会在停止编辑 30 秒后上传笔记，并在页面可
 
 ## 致谢
 
-- EdgeEver 的笔记产品设计也参考了 [Evernote（印象笔记）](https://evernote.com/) 等成熟笔记工具的公开产品体验。相关功能由 EdgeEver 独立设计与实现。
+- EdgeEver 的笔记产品设计也参考了 [Evernote（印象笔记）](https://evernote.com/)、[Notion](https://www.notion.com/) 等成熟笔记工具的公开产品体验。相关功能由 EdgeEver 独立设计与实现。
 - 思维导图与可视化图表笔记的产品设计参考了 [XMind](https://xmind.com/) 和 [ProcessOn](https://www.processon.com/) 等图表工具的公开产品体验。相关功能由 EdgeEver 独立设计与实现。
-- 编辑器主题的排版架构、标题层级与章节结构参考了 [obsidian-minimal](https://github.com/kepano/obsidian-minimal)、[Outline](https://github.com/outline/outline) 和 [墨格](https://moyufang.cn/editor) 的公开方案。名称、素材与实现均由 EdgeEver 独立完成。
 
 ## 商标与品牌使用
 

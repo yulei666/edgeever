@@ -280,9 +280,8 @@ Web、PWA 與桌面版會在停止編輯 30 秒後上傳筆記，並在頁面可
 
 ## 致謝
 
-- EdgeEver 的筆記產品設計也參考了 [Evernote（印象筆記）](https://evernote.com/) 等成熟筆記工具的公開產品體驗。相關功能由 EdgeEver 獨立設計與實作。
+- EdgeEver 的筆記產品設計也參考了 [Evernote（印象筆記）](https://evernote.com/)、[Notion](https://www.notion.com/) 等成熟筆記工具的公開產品體驗。相關功能由 EdgeEver 獨立設計與實作。
 - 心智圖與視覺化圖表筆記的產品設計參考了 [XMind](https://xmind.com/) 和 [ProcessOn](https://www.processon.com/) 等圖表工具的公開產品體驗。相關功能由 EdgeEver 獨立設計與實作。
-- 編輯器主題的排版架構、標題層級與章節結構參考了 [obsidian-minimal](https://github.com/kepano/obsidian-minimal)、[Outline](https://github.com/outline/outline) 和 [墨格](https://moyufang.cn/editor) 的公開方案。名稱、素材與實作均由 EdgeEver 獨立完成。
 
 ## 商標與品牌使用
 
