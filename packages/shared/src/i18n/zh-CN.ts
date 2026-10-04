@@ -1980,6 +1980,7 @@ export const zhCN = {
     dragHandle: "拖动块",
     noteBodyAria: "笔记正文",
     markdownSourceAria: "Markdown 源码",
+    richTableSourceProtection: "这处表格单元格含有 Markdown 无法完整表示的富文本结构。刚才的修改未应用；请在富文本视图中修改该结构，表格外的源码仍可编辑。",
     loading: "加载中",
     emptySelection: "选择或新建一条笔记",
     saveState: {

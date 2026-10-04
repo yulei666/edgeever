@@ -1,23 +1,26 @@
 {
-  "version": "1.99.1",
+  "version": "1.99.2",
   "changes": {
     "en-US": [
-      "Codex progress in the AI sidebar now stays in the process view, while the final reply appears separately.",
-      "Desktop Codex sessions now use the first user prompt for their titles.",
-      "Downloaded file attachments and PDFs on desktop now keep their original filenames.",
-      "Firefox Web Clipper 0.1.15 now requests site access when saving from its popup and improves add-on submission compatibility."
+      "Markdown source editing now preserves the caret and rich table cells; edits to table content that Markdown cannot represent show a clear warning.",
+      "Feedback reports now include instance diagnostics to help identify connection problems.",
+      "Web Clipper 0.1.16 fixes page capture in Chromium browsers; the store update is pending review.",
+      "The Linux desktop app no longer creates duplicate tray icons when its menu changes.",
+      "The Best Practices guide now covers mobile image sharing, WeChat article clipping, and more capture workflows."
     ],
     "zh-CN": [
-      "AI 侧边栏中的 Codex 过程消息现显示在过程区域，最终回复单独呈现。",
-      "桌面端 Codex 会话现在根据用户的首条提问生成标题。",
-      "桌面端下载文件附件和 PDF 时，现在会保留原始文件名。",
-      "Firefox 网页剪藏插件 0.1.15 现可在弹窗保存时正确请求网站访问权限，并改进扩展提交兼容性。"
+      "Markdown 源码编辑现可保持光标位置与富文本表格单元格；若表格内容无法由 Markdown 完整表示，会明确提示未应用该次修改。",
+      "反馈报告现包含实例诊断信息，便于定位连接问题。",
+      "网页剪藏插件 0.1.16 修复 Chromium 浏览器中的页面抓取；商店更新仍待审核。",
+      "Linux 桌面端更新托盘菜单时不再产生重复图标。",
+      "最佳实践指南现涵盖移动端图片分享、微信公众号文章剪藏和更多内容收集流程。"
     ],
     "ja": [
-      "AI サイドバーでは Codex の進行メッセージを処理欄に表示し、最終回答を分けて表示します。",
-      "デスクトップ版の Codex セッション名に、最初のユーザープロンプトが反映されます。",
-      "デスクトップ版でファイル添付と PDF をダウンロードする際、元のファイル名が保持されます。",
-      "Firefox Web Clipper 0.1.15 では、ポップアップから保存する際にサイトへのアクセス許可を求め、アドオンの提出互換性を改善しました。"
+      "Markdown ソース編集でカーソル位置とリッチテキストの表セルを保持します。Markdown で表現できない表の変更には、適用されなかったことを明示します。",
+      "フィードバックレポートにインスタンスの診断情報を含め、接続問題の特定を助けます。",
+      "Web Clipper 0.1.16 は Chromium ブラウザーでのページ取得を修正します。ストアの更新は審査待ちです。",
+      "Linux デスクトップアプリでトレイメニューの更新時にアイコンが重複しなくなりました。",
+      "ベストプラクティスガイドに、モバイルでの画像共有、WeChat 記事のクリップなどの収集手順を追加しました。"
     ]
   }
 }
