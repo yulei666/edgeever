@@ -98,7 +98,7 @@ const baseEditorTheme = EditorView.theme({
   },
   "@media (min-width: 1024px)": {
     ".cm-scroller": {
-      scrollbarGutter: "stable both-edges",
+      scrollbarGutter: "stable",
     },
   },
   ".cm-line": {
