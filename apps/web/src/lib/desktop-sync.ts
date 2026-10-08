@@ -19,7 +19,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { isDesktopResourceRuntime, mapMarkdownResourceUrls, mapTiptapResourceUrls, toApiResourceUrl } from "@/lib/desktop-resources";
 import { readEmergencyDraft } from "@/lib/emergency-draft";
 import { notebookDeleteIdsFromPayload } from "@/lib/notebook-delete";
-import { notifyMemoIdRemapped, notifyMemoSyncAcknowledged, notifySyncQueueChanged } from "@/lib/sync-events";
+import { notifyMemoIdRemapped, notifyMemoSyncAcknowledged, notifyNotebookIdRemapped, notifySyncQueueChanged } from "@/lib/sync-events";
 
 type StagedResourceRewrite = { memoId: string; placeholder: string; url: string };
 
@@ -476,7 +476,7 @@ const syncOutboxItem = async (item: DesktopOutboxItem, stagedRewrites: StagedRes
   if (item.kind === "notebook.create") {
     const data = await api.createNotebook({ name: String(payload.name ?? ""), parentId: typeof payload.parentId === "string" ? payload.parentId : null });
     await acknowledge(item, undefined, data.notebook);
-    return null;
+    return data.notebook;
   }
 
   if (item.kind === "notebook.update") {
@@ -580,6 +580,9 @@ const syncOutbox = async (stagedRewrites: StagedResourceRewrite[], onlyKinds?: S
         // create is acknowledged. Waiting for the workspace-wide sync to end
         // leaves a window where the next autosave still sends revision 0.
         notifyMemoIdRemapped(new Map([[item.entityId, result.id]]));
+      }
+      if (item.kind === "notebook.create" && result && typeof result === "object" && "id" in result && typeof result.id === "string") {
+        notifyNotebookIdRemapped(item.entityId, result.id);
       }
       if (result && typeof result === "object" && "id" in result && typeof result.id === "string" && "contentJson" in result) {
         const syncedMemo = result as DesktopRpcResponses["memo.get"]["memo"];

@@ -25,6 +25,51 @@ const {
 } = await import("./desktop-sync.ts");
 const { api, ApiRequestError } = await import("./api.ts");
 
+test("desktop notebook create announces its durable id after sidecar acknowledgment", async () => {
+  const previousWindow = globalThis.window;
+  const previousNavigator = globalThis.navigator;
+  const originalCreateNotebook = api.createNotebook;
+  const events = [];
+  const calls = [];
+  let outboxReads = 0;
+  const item = { id: 4, version: 1, kind: "notebook.create", entityId: "nb_local_1", payload: { name: "测试" } };
+  globalThis.window = {
+    dispatchEvent: (event) => { events.push(event); return true; },
+    edgeeverDesktop: {
+      isAvailable: true,
+      listStagedResources: async () => [],
+      listStagedResourceAliases: async () => [],
+      sidecarRequest: async (method, params) => {
+        calls.push(method);
+        if (method === "sync.outbox.list") {
+          if (params.limit === 200) return { items: [] };
+          outboxReads += 1;
+          return { items: outboxReads === 1 ? [] : [item] };
+        }
+        if (method === "sync.status") return { pending: 1, syncing: 0 };
+        return { ok: true };
+      },
+    },
+  };
+  globalThis.navigator = { onLine: true };
+  api.createNotebook = async () => ({ notebook: { id: "nb_remote_1", name: "测试", parentId: null } });
+  try {
+    const result = await syncDesktopData();
+    expect(result.failed).toBe(0);
+    expect(calls).toContain("sync.outbox.ack");
+    expect(events.find((event) => event.type === "edgeever:notebook-id-remapped")?.detail).toEqual({
+      temporaryId: "nb_local_1",
+      remoteId: "nb_remote_1",
+    });
+    expect(calls.indexOf("sync.outbox.ack")).toBeLessThan(calls.indexOf("sync.status"));
+  } finally {
+    api.createNotebook = originalCreateNotebook;
+    globalThis.navigator = previousNavigator;
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
 test("desktop explicit discard clears a conflict whose cloud note is gone", async () => {
   const previousWindow = globalThis.window;
   const originalGetMemo = api.getMemo;

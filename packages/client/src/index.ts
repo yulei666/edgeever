@@ -75,7 +75,7 @@ import type {
   PluginPublicFetchResponse,
 } from "@edgeever/shared";
 
-const MAX_SINGLE_REQUEST_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_SINGLE_REQUEST_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 async function consumeEventStream<T>(body: ReadableStream<Uint8Array>, onEvent: (event: T) => void) {
   const reader = body.getReader();
@@ -125,7 +125,7 @@ export type MultipartResourceUploadSource = {
   filename: string;
   mimeType: string;
   byteSize: number;
-  readPart: (start: number, end: number) => Promise<Blob>;
+  readPart: (start: number, end: number) => Promise<Blob | Uint8Array<ArrayBuffer>>;
 };
 
 export type InstanceHealth = {

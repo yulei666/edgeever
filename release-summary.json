@@ -1,35 +1,29 @@
 {
-  "version": "1.101.0",
+  "version": "1.102.0",
   "changes": {
     "en-US": [
-      "Save YouTube and Bilibili watch pages as video notes, with page images and available captions kept in the note.",
-      "Transcribe audio and video attachments through a configured speech service, view transcripts inline, and test the service connection from settings.",
-      "Use EdgeEver in Polish, with more Android interface text translated into Chinese.",
-      "Browse a signed community plugin catalog alongside official plugins.",
-      "Edit mind maps as a Markdown outline, toggle the sidebar by keyboard, select notebooks by clicking their row, control spellcheck underlines, and use the standard desktop editing context menu.",
-      "Mobile interactions use calmer motion, and login shows clearer guidance when a session is missing.",
-      "Improve sync conflict cleanup, API and notebook deletion errors, and structured table creation with the AI assistant.",
-      "Refresh the feature showcases, AI database examples, deployment guidance, and Evernote comparison across the guides."
+      "Read and share notes more comfortably on Android and iOS, with improved tablet layout, note actions, and Mermaid diagrams.",
+      "Share note images in a wider Aurora layout, and improve Android image export, saving, and preview reliability.",
+      "Preview DOCX attachments on demand, show upload placeholders for attachments, and fix large file uploads on Android.",
+      "Configure a desktop-wide shortcut to show or hide EdgeEver, and improve installation of larger Antigravity AI adapters.",
+      "Refine dark mode and notebook selection, show member account dates, preserve new notebook selection after sync, and improve AI math display.",
+      "Expand the API and plugin development guides and add a Polish project overview."
     ],
     "zh-CN": [
-      "可将 YouTube 和哔哩哔哩观看页保存为视频笔记，并将页面图片和可用字幕保留在笔记中。",
-      "可通过已配置的语音服务转写音视频附件，在笔记中直接查看结果，并从设置中测试服务连接。",
-      "EdgeEver 新增波兰语，并补全更多 Android 界面的中文翻译。",
-      "可在官方插件旁浏览带签名的社区插件目录。",
-      "思维导图支持 Markdown 大纲编辑；还可用快捷键切换侧栏、点击整行选择笔记本、设置拼写检查下划线，并使用桌面标准编辑右键菜单。",
-      "移动端交互动效更加平稳，登录后缺少会话时也会给出更清晰的提示。",
-      "改进同步冲突清理、API 与笔记本删除错误提示，以及 AI 助手创建结构化表格的能力。",
-      "更新功能展示、AI 数据库示例、部署说明和各语言的 Evernote 对比指南。"
+      "改进 Android 与 iOS 的笔记阅读和分享：优化平板布局、笔记操作与 Mermaid 图表显示。",
+      "笔记图片分享默认使用更宽的 Aurora 样式，并提高 Android 图片导出、保存和预览的可靠性。",
+      "支持按需预览 DOCX 附件、在上传时显示附件占位，并修复 Android 大文件上传。",
+      "桌面端可设置全局快捷键以显示或隐藏 EdgeEver，并改进较大 Antigravity AI 适配器的安装。",
+      "调整深色模式和笔记本选中状态，显示成员账户时间；修复新建笔记本同步后的选中状态，并改善 AI 数学公式显示。",
+      "补充 API 与插件开发指南，并新增波兰语项目介绍。"
     ],
     "ja": [
-      "YouTube と Bilibili の視聴ページを動画ノートとして保存し、ページ画像と利用可能な字幕をノートに保持できます。",
-      "設定した音声サービスで音声・動画の添付ファイルを文字起こしし、結果をノート内で表示し、設定画面から接続をテストできます。",
-      "EdgeEver にポーランド語を追加し、Android 画面の中国語訳を拡充しました。",
-      "公式プラグインと並んで、署名付きコミュニティプラグインのカタログを閲覧できます。",
-      "マインドマップを Markdown アウトラインで編集でき、ショートカットでサイドバーを切り替え、行をクリックしてノートブックを選択し、スペルチェックの下線を設定し、デスクトップの標準編集メニューを利用できます。",
-      "モバイルの動きを穏やかにし、ログイン後にセッションが見つからない場合の案内を改善しました。",
-      "同期の競合整理、API とノートブック削除時のエラー表示、AI アシスタントによる構造化テーブルの作成を改善しました。",
-      "機能紹介、AI データベースの例、導入ガイド、各言語の Evernote 比較を更新しました。"
+      "Android と iOS のノート閲覧・共有を改善し、タブレットのレイアウト、ノート操作、Mermaid 図の表示を調整しました。",
+      "ノート画像の共有で幅広の Aurora デザインを標準にし、Android での画像の書き出し、保存、プレビューを改善しました。",
+      "DOCX 添付ファイルのオンデマンドプレビューとアップロード中の表示を追加し、Android の大きなファイルのアップロードを修正しました。",
+      "デスクトップ版で EdgeEver の表示・非表示を切り替えるグローバルショートカットを設定できるようにし、大きな Antigravity AI アダプターのインストールを改善しました。",
+      "ダークモードとノートブックの選択表示を調整し、メンバーのアカウント日時を表示します。新規ノートブックの同期後の選択状態と AI の数式表示も改善しました。",
+      "API とプラグイン開発ガイドを拡充し、ポーランド語のプロジェクト概要を追加しました。"
     ]
   }
 }

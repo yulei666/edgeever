@@ -71,7 +71,7 @@ import { useEditorMarkdownMode } from "./editor/useEditorMarkdownMode";
 import {
   ImageUploadPlaceholderExtension,
   addImageUploadPlaceholder,
-  createImageUploadPlaceholder,
+  createResourceUploadPlaceholder,
   removeImageUploadPlaceholder,
   waitForImageSourceReady,
   updateImageUploadPlaceholder,
@@ -1022,14 +1022,14 @@ const RichEditorPane = ({
     const targetMemoId = currentMemo.id;
     const interactionVersionAtRequest = editorCanvasInteractionVersionRef.current;
     const placeholderPosition = currentEditor.state.selection.from;
-    const imagePlaceholderByFile = new Map(files
-      .filter((file) => SUPPORTED_PASTE_IMAGE_TYPES.has(file.type))
-      .map((file) => [file, createImageUploadPlaceholder(
-        file,
-        t("editor.uploadState.imagePreparing"),
-      )] as const));
-    const imagePlaceholders = [...imagePlaceholderByFile.values()];
-    imagePlaceholders.forEach((placeholder) => {
+    const placeholderByFile = new Map(files.map((file) => [file,
+      createResourceUploadPlaceholder(file, {
+        imagePreparing: t("editor.uploadState.imagePreparing"),
+        fileWaiting: t("editor.uploadState.waitingToUpload"),
+      }),
+    ] as const));
+    const placeholders = [...placeholderByFile.values()];
+    placeholders.forEach((placeholder) => {
       addImageUploadPlaceholder(currentEditor, placeholder, placeholderPosition);
     });
 
@@ -1052,9 +1052,9 @@ const RichEditorPane = ({
       const results = await processFileUploadBatch(files, async (file) => {
         const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(file.type);
         const shouldCompress = isImage && imageCompressionEnabledRef.current;
-        const placeholder = imagePlaceholderByFile.get(file);
+        const placeholder = placeholderByFile.get(file);
         if (placeholder) updateImageUploadPlaceholder(editorRef.current, placeholder,
-          t(shouldCompress ? "editor.uploadState.imageCompressing" : "editor.uploadState.uploading"));
+          t(shouldCompress ? "editor.uploadState.imageCompressing" : "editor.uploadState.waitingToUpload"));
         setImageUploadState(shouldCompress ? "compressing" : "uploading");
         const preparedFile = shouldCompress ? (await compressImageForUpload(file)).file : file;
         if (placeholder) updateImageUploadPlaceholder(editorRef.current, placeholder,
@@ -1062,7 +1062,7 @@ const RichEditorPane = ({
         return preparedFile;
       }, async (uploadFile, file) => {
         const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(file.type);
-        const placeholder = imagePlaceholderByFile.get(file);
+        const placeholder = placeholderByFile.get(file);
         setImageUploadState("uploading");
         if (placeholder) updateImageUploadPlaceholder(editorRef.current, placeholder,
           t("editor.uploadState.uploading"));
@@ -1165,7 +1165,7 @@ const RichEditorPane = ({
       }
     }).finally(() => {
       const placeholderEditor = editorRef.current;
-      imagePlaceholders.forEach((placeholder) => {
+      placeholders.forEach((placeholder) => {
         removeImageUploadPlaceholder(placeholderEditor, placeholder);
       });
     });
