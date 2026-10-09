@@ -1234,9 +1234,9 @@ const baseWorkspaceStyles = StyleSheet.create({
   },
   createMemoTitleInput: {
     color: "#0f172a",
-    fontSize: 28,
-    fontWeight: "800",
-    lineHeight: 34,
+    fontSize: 22,
+    fontWeight: "700",
+    lineHeight: 28,
     minHeight: 42,
     padding: 0,
   },
@@ -1808,9 +1808,9 @@ const baseWorkspaceStyles = StyleSheet.create({
   },
   detailTitle: {
     color: "#0f172a",
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "700",
-    lineHeight: 24,
+    lineHeight: 28,
   },
   detailHeader: {
     alignItems: "center",

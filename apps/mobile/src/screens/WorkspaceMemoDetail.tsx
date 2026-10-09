@@ -517,6 +517,10 @@ export const MemoDetailModal = ({
   const [imageShareUpdatedAt, setImageShareUpdatedAt] = useState(true);
   const [imageShareBranding, setImageShareBranding] = useState(true);
   const [viewerNotebookPickerOpen, setViewerNotebookPickerOpen] = useState(false);
+  const [viewerTagsOpen, setViewerTagsOpen] = useState(false);
+  const [viewerTags, setViewerTags] = useState<string[]>([]);
+  const [viewerNotebookId, setViewerNotebookId] = useState("");
+  const [metadataSaving, setMetadataSaving] = useState(false);
   const [preparedNoteImage, setPreparedNoteImage] = useState<MobilePreparedNoteImage | null>(null);
   const [imageSavePickerOpen, setImageSavePickerOpen] = useState(false);
   const [savedImagePath, setSavedImagePath] = useState<string | null>(null);
@@ -597,17 +601,31 @@ export const MemoDetailModal = ({
   }, [baseUrl, client, resolvedLocale, session?.token]);
   const handleViewerNotebookSelect = useCallback((nextNotebookId: string) => {
     setViewerNotebookPickerOpen(false);
-    if (
-      !memo
-      || memo.isDeleted
-      || !nextNotebookId
-      || nextNotebookId === "all"
-      || nextNotebookId === memo.notebookId
-    ) {
+    if (nextNotebookId && nextNotebookId !== "all") setViewerNotebookId(nextNotebookId);
+    setViewerTagsOpen(true);
+  }, []);
+  const openViewerTags = () => {
+    if (!memo || memo.isDeleted || isSaving) return;
+    setViewerTags([...memo.tags]);
+    setViewerNotebookId(memo.notebookId);
+    setViewerTagsOpen(true);
+  };
+  const saveViewerMetadata = async () => {
+    if (!memo || memo.isDeleted || metadataSaving || isSaving) return;
+    if (viewerNotebookId === memo.notebookId && viewerTags.join("\n") === memo.tags.join("\n")) {
+      setViewerTagsOpen(false);
       return;
     }
-    updateMutation.mutate({ memo, payload: { notebookId: nextNotebookId } });
-  }, [memo, updateMutation]);
+    setMetadataSaving(true);
+    try {
+      await updateMutation.mutateAsync({ memo, payload: { notebookId: viewerNotebookId, tags: viewerTags } });
+      setViewerTagsOpen(false);
+    } catch (error) {
+      Alert.alert("保存失败", error instanceof Error ? error.message : "请重试");
+    } finally {
+      setMetadataSaving(false);
+    }
+  };
 
   const saveResourceAs = useCallback(async (target: MobileResourceTarget) => {
     if (!client) throw new Error(resolvedLocale !== "zh-CN" ? "The resource client is unavailable." : "当前无法读取资源。");
@@ -700,8 +718,8 @@ export const MemoDetailModal = ({
     Platform.OS === "android" ? ANDROID_SYSTEM_NAVIGATION_FALLBACK : 0
   ) + 16;
 
-  const handleReaderScroll = useCallback(async (scrollTop: number) => {
-    setTitleCollapsed(scrollTop > 24);
+  const handleReaderScroll = useCallback(async (collapsed: boolean) => {
+    setTitleCollapsed(collapsed);
   }, []);
 
   useEffect(() => {
@@ -744,6 +762,7 @@ export const MemoDetailModal = ({
     setImagePreview(null);
     setAiAssistantOpen(false);
     setViewerNotebookPickerOpen(false);
+    setViewerTagsOpen(false);
     safeDomCall(() => viewerRef.current?.search("", -1));
   }, [isEditing]);
 
@@ -758,6 +777,7 @@ export const MemoDetailModal = ({
     setImagePreview(null);
     setResourceTarget(null);
     setViewerNotebookPickerOpen(false);
+    setViewerTagsOpen(false);
     resourceDataUrlCacheRef.current.clear();
   }, [initialSearchQuery, memo?.id]);
 
@@ -1129,6 +1149,19 @@ export const MemoDetailModal = ({
             </Pressable>
             {memo && !memo.isDeleted ? (
               <Pressable
+                accessibilityLabel="选择笔记标签"
+                accessibilityHint="点选已有标签，或输入名称创建新标签"
+                accessibilityRole="button"
+                disabled={isSaving}
+                hitSlop={6}
+                onPress={openViewerTags}
+                style={styles.detailHeaderIconButton}
+              >
+                <Tag color={memo.tags.length > 0 ? "#16A06E" : "#475569"} size={20} />
+              </Pressable>
+            ) : null}
+            {memo && !memo.isDeleted ? (
+              <Pressable
                 accessibilityLabel="搜索当前笔记"
                 accessibilityRole="button"
                 onPress={() => setSearchOpen(true)}
@@ -1286,6 +1319,7 @@ export const MemoDetailModal = ({
                   text={memoTitle}
                 />
               )}
+              {searchOpen || memo.isDeleted ? (
               <View style={styles.detailMetaRow}>
                 {memo.isDeleted ? (
                 <View style={styles.detailNotebookButton}>
@@ -1299,7 +1333,7 @@ export const MemoDetailModal = ({
                   accessibilityRole="button"
                   disabled={isSaving}
                   hitSlop={8}
-                  onPress={() => setViewerNotebookPickerOpen(true)}
+                  onPress={openViewerTags}
                   style={styles.detailNotebookButton}
                 >
                   <Text numberOfLines={1} style={styles.detailNotebookName}>{notebookName}</Text>
@@ -1317,6 +1351,7 @@ export const MemoDetailModal = ({
                   />
                 </View>
               </View>
+              ) : null}
               {searchOpen ? (
                 <View style={styles.noteSearchPanel}>
                   <Search color="#64748b" size={16} />
@@ -1817,14 +1852,54 @@ export const MemoDetailModal = ({
             {editor.uploadSourcePicker}
           </>
         ) : (
+          <>
+          <TagPickerModal
+            dataScope={createMobileDataScope(session?.baseUrl ?? baseUrl, session?.user?.id)}
+            disabled={metadataSaving}
+            headerContent={(
+              <Pressable
+                accessibilityLabel="所在笔记本"
+                accessibilityRole="button"
+                disabled={metadataSaving}
+                onPress={() => {
+                  setViewerTagsOpen(false);
+                  setViewerNotebookPickerOpen(true);
+                }}
+                style={styles.detailNotebookButton}
+              >
+                <Text numberOfLines={1} style={styles.detailNotebookName}>
+                  {notebooks.find((notebook) => notebook.id === viewerNotebookId)?.name ?? notebookName}
+                </Text>
+                <ChevronDown color="#64748b" size={14} />
+              </Pressable>
+            )}
+            footerContent={(
+              <View style={detailLayoutStyles.metadataActions}>
+                <Pressable accessibilityRole="button" disabled={metadataSaving} onPress={() => setViewerTagsOpen(false)} style={[styles.createMemoDoneButton, detailLayoutStyles.metadataCancel]}>
+                  <Text style={[styles.createMemoDoneText, detailLayoutStyles.metadataCancelText]}>取消</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" disabled={metadataSaving || isSaving} onPress={() => void saveViewerMetadata()} style={[styles.createMemoDoneButton, (metadataSaving || isSaving) && styles.createMemoDoneButtonDisabled]}>
+                  <Text style={[styles.createMemoDoneText, (metadataSaving || isSaving) && styles.createMemoDoneTextDisabled]}>{metadataSaving ? "保存中" : "保存"}</Text>
+                </Pressable>
+              </View>
+            )}
+            onChange={setViewerTags}
+            onClose={() => { if (!metadataSaving) setViewerTagsOpen(false); }}
+            selectedTags={viewerTags}
+            visible={viewerTagsOpen}
+          />
           <NotebookPickerModal
-            activeNotebookId={memo?.notebookId ?? ""}
+            activeNotebookId={viewerNotebookId}
             includeAllNotes={false}
             notebooks={notebooks}
-            onClose={() => setViewerNotebookPickerOpen(false)}
+            onClose={() => {
+              setViewerNotebookPickerOpen(false);
+              setViewerTagsOpen(true);
+            }}
             onSelect={handleViewerNotebookSelect}
             visible={viewerNotebookPickerOpen}
           />
+          </>
         )}
       </SafeAreaView>
       ) : null}
@@ -2072,6 +2147,19 @@ const imageShareStyles = StyleSheet.create({
 });
 
 const detailLayoutStyles = StyleSheet.create({
+  metadataCancel: {
+    backgroundColor: "#f1f5f9",
+  },
+  metadataCancelText: {
+    color: "#475569",
+  },
+  metadataActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
   body: {
     flex: 1,
     minHeight: 0,

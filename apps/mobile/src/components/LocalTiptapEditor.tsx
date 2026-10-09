@@ -1,6 +1,7 @@
 'use dom';
 
 import "katex/dist/katex.min.css";
+import { attachMobileReaderScroll } from "../lib/mobile-reader-scroll";
 import { Graph } from "@antv/x6";
 import Image from "@tiptap/extension-image";
 import CodeBlock from "@tiptap/extension-code-block";
@@ -142,7 +143,7 @@ type LocalTiptapEditorSharedProps = {
   onResourcePress?: (targetJson: string) => Promise<void>;
   onReady?: (startupMs: number) => Promise<void>;
   onSearchResult?: (count: number, index: number, query: string) => Promise<void>;
-  onReaderScroll?: (scrollTop: number) => Promise<void>;
+  onReaderScroll?: (collapsed: boolean) => Promise<void>;
   onImageExportEvent?: (payloadJson: string) => Promise<void>;
   ref: Ref<LocalTiptapEditorRef>;
   locale: "zh-CN" | "en-US" | "ja" | "pl";
@@ -1616,18 +1617,9 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     const scrollContainer = document.querySelector<HTMLElement>(".edgeever-editor-scroll");
     if (!scrollContainer) return;
 
-    let titleCollapsed = false;
-    const reportScroll = () => {
-      const nextCollapsed = titleCollapsed
-        ? scrollContainer.scrollTop > 4
-        : scrollContainer.scrollTop > 24;
-      if (nextCollapsed === titleCollapsed) return;
-      titleCollapsed = nextCollapsed;
-      void onReaderScrollRef.current?.(scrollContainer.scrollTop);
-    };
-    scrollContainer.addEventListener("scroll", reportScroll, { passive: true });
-    reportScroll();
-    return () => scrollContainer.removeEventListener("scroll", reportScroll);
+    return attachMobileReaderScroll(scrollContainer, (collapsed) => {
+      void onReaderScrollRef.current?.(collapsed);
+    });
   }, [editor, isViewer, visualDiagram]);
 
   const toolbarState = useEditorState({

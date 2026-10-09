@@ -1,29 +1,23 @@
 {
-  "version": "1.102.0",
+  "version": "1.103.0",
   "changes": {
     "en-US": [
-      "Read and share notes more comfortably on Android and iOS, with improved tablet layout, note actions, and Mermaid diagrams.",
-      "Share note images in a wider Aurora layout, and improve Android image export, saving, and preview reliability.",
-      "Preview DOCX attachments on demand, show upload placeholders for attachments, and fix large file uploads on Android.",
-      "Configure a desktop-wide shortcut to show or hide EdgeEver, and improve installation of larger Antigravity AI adapters.",
-      "Refine dark mode and notebook selection, show member account dates, preserve new notebook selection after sync, and improve AI math display.",
-      "Expand the API and plugin development guides and add a Polish project overview."
+      "Manage all active public note shares from Settings, with quick access to links, notes, and sharing options.",
+      "Keep pasted images and attachments when creating new notes in the desktop app.",
+      "Make Android note metadata more compact, unify title typography, and stabilize title visibility while scrolling in the reader.",
+      "Preserve notes and nested notebooks when newly created desktop notebooks sync to the server, and retry dependent pending changes correctly."
     ],
     "zh-CN": [
-      "改进 Android 与 iOS 的笔记阅读和分享：优化平板布局、笔记操作与 Mermaid 图表显示。",
-      "笔记图片分享默认使用更宽的 Aurora 样式，并提高 Android 图片导出、保存和预览的可靠性。",
-      "支持按需预览 DOCX 附件、在上传时显示附件占位，并修复 Android 大文件上传。",
-      "桌面端可设置全局快捷键以显示或隐藏 EdgeEver，并改进较大 Antigravity AI 适配器的安装。",
-      "调整深色模式和笔记本选中状态，显示成员账户时间；修复新建笔记本同步后的选中状态，并改善 AI 数学公式显示。",
-      "补充 API 与插件开发指南，并新增波兰语项目介绍。"
+      "在设置中集中管理所有有效的笔记公开分享，快捷访问分享链接、原笔记及分享设置。",
+      "修复桌面端新建笔记时粘贴的图片和附件未能保留的问题。",
+      "优化 Android 笔记元信息布局，统一标题字体，并修复阅读滚动时标题显示不稳定的问题。",
+      "修复桌面端新建笔记本同步时笔记与子笔记本关联丢失的问题，并正确重试依赖这些新建内容的待同步操作。"
     ],
     "ja": [
-      "Android と iOS のノート閲覧・共有を改善し、タブレットのレイアウト、ノート操作、Mermaid 図の表示を調整しました。",
-      "ノート画像の共有で幅広の Aurora デザインを標準にし、Android での画像の書き出し、保存、プレビューを改善しました。",
-      "DOCX 添付ファイルのオンデマンドプレビューとアップロード中の表示を追加し、Android の大きなファイルのアップロードを修正しました。",
-      "デスクトップ版で EdgeEver の表示・非表示を切り替えるグローバルショートカットを設定できるようにし、大きな Antigravity AI アダプターのインストールを改善しました。",
-      "ダークモードとノートブックの選択表示を調整し、メンバーのアカウント日時を表示します。新規ノートブックの同期後の選択状態と AI の数式表示も改善しました。",
-      "API とプラグイン開発ガイドを拡充し、ポーランド語のプロジェクト概要を追加しました。"
+      "設定から有効なノートの公開共有を一覧で管理し、リンク、元のノート、共有設定にすばやくアクセスできます。",
+      "デスクトップアプリで新規ノートに貼り付けた画像や添付ファイルが保持されない問題を修正しました。",
+      "Androidのノート情報をコンパクトにし、タイトルの書体を統一して、閲覧中のスクロールに伴うタイトル表示を安定させました。",
+      "デスクトップで新規作成したノートブックの同期時にノートと子ノートブックの関連を保持し、依存する保留中の変更を正しく再試行します。"
     ]
   }
 }
