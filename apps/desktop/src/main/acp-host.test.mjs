@@ -237,7 +237,7 @@ describe("ACP command allow-list", () => {
       expect(listed.find((adapter) => adapter.id === "codex")).toEqual({
         id: "codex",
         label: "Codex",
-        state: "failed",
+        state: "not_probed",
         detail: "not_probed",
       });
       expect(listed.find((adapter) => adapter.id === "antigravity")?.state).toBe("not_installed");
@@ -358,7 +358,7 @@ describe("ACP command allow-list", () => {
       const resolved = resolveAcpCommand({ id: "grokBuild" }, { platform: "darwin", pathEnv: "", home: directory });
       expect(resolved).toEqual({ ok: true, command: { command: realpathSync(binary), args: ["agent", "stdio"] } });
       const runtime = createAcpHostRuntime({ platform: "darwin", pathEnv: "", home: directory });
-      expect(runtime.listAdapters().find((adapter) => adapter.id === "grokBuild")?.state).toBe("failed");
+      expect(runtime.listAdapters().find((adapter) => adapter.id === "grokBuild")?.state).toBe("not_probed");
       expect(resolveAcpCommand({ id: "grokBuild", path: "../grok" }, { platform: "darwin", home: directory }).detail).toBe("invalid_path");
     } finally {
       await rm(directory, { recursive: true, force: true });
@@ -643,6 +643,33 @@ describe("ACP stdio session", () => {
       expect(report.newSession.cwd).toContain(`${path.sep}edgeever-acp-`);
       expect(report.newSession.mcpServers).toEqual([]);
       const pid = Number(await readFile(`${reportPath}.pid`, "utf8"));
+      await waitUntilExited(pid);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  sessionTest("a managed Codex connector is unchecked after restart and becomes available after a real probe", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-restart-"));
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath: path.join(directory, "report.json"),
+        secretPath: path.join(directory, "secret.txt"),
+        hold: false,
+      });
+      const options = {
+        adapterManager: {
+          get: (id) => id === "codex" ? { version: "2.1.1", command: { command: process.execPath, args: [scriptPath] } } : null,
+        },
+        pathEnv: "",
+      };
+      const runtime = createAcpHostRuntime(options);
+      const codex = (host) => host.listAdapters().find((adapter) => adapter.id === "codex");
+      expect(codex(runtime)).toMatchObject({ state: "not_probed", detail: "not_probed", managed: true });
+      expect((await runtime.probeAdapter({ id: "codex" })).state).toBe("available");
+      expect(codex(runtime).state).toBe("available");
+      expect(codex(createAcpHostRuntime(options)).state).toBe("not_probed");
+      const pid = Number(await readFile(path.join(directory, "report.json.pid"), "utf8"));
       await waitUntilExited(pid);
     } finally {
       await rm(directory, { recursive: true, force: true });

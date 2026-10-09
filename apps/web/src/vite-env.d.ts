@@ -112,7 +112,7 @@ interface EdgeEverDesktopBridge {
   listAcpAdapters?(): Promise<Array<{
     id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
     label: string;
-    state: "not_installed" | "installing" | "needs_login" | "available" | "failed";
+    state: "not_installed" | "not_probed" | "installing" | "needs_login" | "available" | "failed";
     detail?: string;
     promptCapabilities?: { image?: boolean; embeddedContext?: boolean };
     version?: string;

@@ -1487,6 +1487,15 @@ export const zhCN = {
       imageSaveFailed: "图片暂时无法保存到本机。请先下载图片，关闭页面后可能无法找回。",
     },
     agentSource: {
+      configure: "配置模型与 Agent",
+      switchNoteAgentHint: "切换后由所选 Agent 继续处理当前信息图。",
+      optionUnavailable: "不可用",
+
+      switch: "切换 AI",
+      newAgentThread: "切换外部 Agent 会开启新对话，原对话保留在历史中。",
+      noModels: "请在设置中配置 AI 模型。",
+      switchUnavailable: "Agent 暂不可用，请在设置中检查连接。",
+
       title: "Agent 运行模式",
       description: "使用应用内置 Agent，或连接本机运行的 Agent (ACP)。",
       localDisabled: "仅支持桌面客户端。",
@@ -1547,6 +1556,7 @@ export const zhCN = {
       notProbed: "尚未检查",
       invalidPath: "请填写可执行文件的绝对路径。",
       states: {
+        not_probed: "尚未检查",
         not_installed: "未找到 ACP 连接组件",
         installing: "正在自动安装 ACP 连接组件…",
         needs_login: "需要登录",
@@ -2737,7 +2747,7 @@ export const zhCN = {
     sidebarAndroidTitle: "在 Google Play 下载 EdgeEver 安卓端",
     sidebarIos: "iOS",
     sidebarIosBadge: "App Store",
-    sidebarIosRegionBadge: "非大陆区",
+    sidebarIosRegionBadge: "海外 ID",
     sidebarIosTitle: "在 App Store 下载 EdgeEver iOS 端（仅支持非大陆区 Apple ID）",
     sidebarIosAvailability: "仅支持非中国大陆区 Apple ID",
     sidebarChromeEdge: "Chrome / Edge",

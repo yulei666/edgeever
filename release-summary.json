@@ -1,23 +1,17 @@
 {
-  "version": "1.103.0",
+  "version": "1.105.0",
   "changes": {
     "en-US": [
-      "Manage all active public note shares from Settings, with quick access to links, notes, and sharing options.",
-      "Keep pasted images and attachments when creating new notes in the desktop app.",
-      "Make Android note metadata more compact, unify title typography, and stabilize title visibility while scrolling in the reader.",
-      "Preserve notes and nested notebooks when newly created desktop notebooks sync to the server, and retry dependent pending changes correctly."
+      "AI agents can preview and delete empty notebook trees through MCP, with protection for notebooks containing active notes, the inbox, and concurrent changes (#509).",
+      "Improve the desktop AI agent selector with cached and preloaded connection status, status dots, clearer menus, and reliable agent settings across layouts."
     ],
     "zh-CN": [
-      "在设置中集中管理所有有效的笔记公开分享，快捷访问分享链接、原笔记及分享设置。",
-      "修复桌面端新建笔记时粘贴的图片和附件未能保留的问题。",
-      "优化 Android 笔记元信息布局，统一标题字体，并修复阅读滚动时标题显示不稳定的问题。",
-      "修复桌面端新建笔记本同步时笔记与子笔记本关联丢失的问题，并正确重试依赖这些新建内容的待同步操作。"
+      "AI Agent 可通过 MCP 预览并删除空笔记本树，同时保护含有效笔记的目录、等待分类及并发变更（#509）。",
+      "改进桌面 AI Agent 选择器：缓存并预加载连接状态，显示状态圆点，简化菜单，并修复不同布局下的 Agent 设置和连接判断。"
     ],
     "ja": [
-      "設定から有効なノートの公開共有を一覧で管理し、リンク、元のノート、共有設定にすばやくアクセスできます。",
-      "デスクトップアプリで新規ノートに貼り付けた画像や添付ファイルが保持されない問題を修正しました。",
-      "Androidのノート情報をコンパクトにし、タイトルの書体を統一して、閲覧中のスクロールに伴うタイトル表示を安定させました。",
-      "デスクトップで新規作成したノートブックの同期時にノートと子ノートブックの関連を保持し、依存する保留中の変更を正しく再試行します。"
+      "MCP で空のノートブック階層をプレビューして削除できるようになりました。ノートを含む階層、受信トレイ、同時変更は保護されます（#509）。",
+      "デスクトップの AI エージェント選択で接続状態をキャッシュして事前に読み込み、状態表示とメニューを改善しました。レイアウト間の設定と接続判定も修正しました。"
     ]
   }
 }
