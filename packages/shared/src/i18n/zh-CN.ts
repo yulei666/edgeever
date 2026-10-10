@@ -2,6 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const zhCN = {
+  noteProperties: {"heading": "笔记属性", "source": "显示 YAML 源码", "name": "属性名称", "type": "属性类型", "add": "添加属性", "remove": "删除 {{name}}", "invalidName": "请输入不重复且非系统保留的属性名称。", "invalidYaml": "请检查笔记属性：", "invalidNumber": "请输入有效数字。", "listHint": "每行一个值", "text": "文本", "list": "列表", "number": "数字", "checkbox": "复选框", "date": "日期"},
   infographic: {
     name: "信息图", autoLayout: "自动排版", describe: "描述内容并生成", chooseTemplate: "选择模板手动填内容",
     prompt: "描述你想呈现的信息、结构与重点", generate: "生成信息图", generating: "正在生成…",
@@ -794,12 +795,6 @@ export const zhCN = {
     editorContentAlignments: {
       center: "优化可读性（居中）",
       start: "靠左显示",
-    },
-    editorContentWidthTitle: "正文宽度",
-    editorContentWidthDescription: "只改变这台设备上的编辑区。",
-    editorContentWidths: {
-      standard: "标准",
-      wide: "较宽",
     },
     editorBodyFontSizeTitle: "正文字号",
     editorBodyLineHeightTitle: "行高",
@@ -2459,17 +2454,23 @@ export const zhCN = {
   mathFormulaDialog: {
     title: "插入公式",
     editTitle: "编辑公式",
-    description: "用 LaTeX 编写公式。行内公式会出现在句子中，块级公式单独占一行。",
+    description: "使用符号键盘直观编写公式，也可编辑 LaTeX。行内公式出现在句子中，块级公式单独占一行。",
     inline: "行内",
     block: "块级",
     latexLabel: "LaTeX",
     latexPlaceholder: "E = mc^2",
     preview: "预览",
-    previewEmpty: "输入 LaTeX 后显示预览",
+    previewEmpty: "输入公式后显示预览",
     previewError: "无法渲染该公式",
     apply: "应用",
     remove: "删除公式",
-    errorEmpty: "请输入 LaTeX。",
+    errorEmpty: "请输入公式。",
+    visualLabel: "公式",
+    sourceMode: "LaTeX 源码",
+    visualMode: "可视化编辑",
+    loading: "正在加载公式编辑器…",
+    loadError: "可视化编辑器暂时无法加载，可继续使用 LaTeX。",
+    incomplete: "在空框中输入，按 Tab 切换到下一处",
   },
   noteLinkPicker: {
     title: "引用笔记",

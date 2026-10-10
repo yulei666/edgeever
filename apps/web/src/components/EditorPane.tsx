@@ -120,17 +120,21 @@ import { api } from "@/lib/api";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { contentReferencesStagedResourceUrl, findMatchingMemoResource, repairMemoStagedResourceUrls, repairTiptapStagedResourceUrls } from "@/lib/staged-resource-repair";
 import { cn, parseTagsText } from "@/lib/utils";
-import { editorContentColumnMaxWidth, type EditorContentWidth } from "@/lib/editor-content-width";
 import {
   EDITOR_ARTICLE_ROW_GAP_PX,
   EDITOR_COMPACT_READING_GUTTER,
   EDITOR_PANE_TIGHT_PX,
   shouldCompactEditorReadingGutter,
 } from "@/lib/editor-reading-gutter";
-import { EDITOR_OUTLINE_WIDTH } from "@/lib/workspace-ui";
+import { EDITOR_CONTENT_MAX_WIDTH, EDITOR_OUTLINE_WIDTH } from "@/lib/workspace-ui";
 import {
   countMemoCharacters,
   createEdgeEverDocumentExtensions,
+  getFrontMatterSource,
+  getMappedNoteProperties,
+  parseNoteProperties,
+  splitMarkdownFrontMatter,
+  updateNoteProperty,
   docToMarkdown,
   MEMO_CONTENT_STYLE,
   noteProseCssVariables,
@@ -316,7 +320,6 @@ type EditorPaneProps = {
   repository: EdgeEverRepository;
   desktopFocusMode: boolean;
   onToggleDesktopFocusMode: () => void;
-  editorContentWidth: EditorContentWidth;
   noteProse: ResolvedNoteProse;
   mobileDefaultEditMemoId: string | null;
   pendingInsertFiles?: { memoId: string; files: File[] } | null;
@@ -395,7 +398,6 @@ const RichEditorPane = ({
   repository,
   desktopFocusMode,
   onToggleDesktopFocusMode,
-  editorContentWidth,
   noteProse,
   mobileDefaultEditMemoId,
   pendingInsertFiles = null,
@@ -1408,6 +1410,39 @@ const RichEditorPane = ({
     onUnsafeRichTableEdit: setRichTableEditBlocked,
   });
   const useMarkdownSourceEditor = !useMobilePlainTextEditor && isMarkdownMode;
+
+  const applyPropertyFields = useCallback((source: string | null) => {
+    if (source === null || hydratingRef.current) return;
+    const fields = memoFieldsRef.current;
+    if (fields.memoId !== memoRef.current?.id) return;
+    const properties = parseNoteProperties(source);
+    if (!properties.values) return;
+    const mapped = getMappedNoteProperties(properties.values);
+    const next = { ...fields, ...(mapped.title !== undefined ? { title: mapped.title } : {}),
+      ...(mapped.tags !== undefined ? { tagsText: mapped.tags.join(", ") } : {}) };
+    if (next.title === fields.title && next.tagsText === fields.tagsText) return;
+    memoFieldsRef.current = next;
+    setMemoFields(next);
+  }, []);
+
+  const updatePropertyField = (name: string, value: unknown) => {
+    if (!isEditorReady(editor)) return;
+    const source = useMarkdownSourceEditor ? splitMarkdownFrontMatter(getMarkdownSource())?.source ?? null
+      : getFrontMatterSource(editor.getJSON() as TiptapDoc);
+    if (source === null) return;
+    const properties = parseNoteProperties(source);
+    if (!properties.values || !Object.hasOwn(properties.values, name)) return;
+    const next = updateNoteProperty(source, name, value);
+    if (useMarkdownSourceEditor) {
+      const split = splitMarkdownFrontMatter(getMarkdownSource())!;
+      const markdown = `---\n${next}\n---\n${split.body}`;
+      setMarkdownSource(markdown);
+      markdownSourceEditorRef.current?.replaceDocument(markdown);
+    } else {
+      const node = editor.state.doc.firstChild!;
+      editor.view.dispatch(editor.state.tr.insertText(next, 1, node.nodeSize - 1));
+    }
+  };
 
   const uploadMarkdownPasteFiles = useCallback(async (files: File[]) => {
     const targetMemoId = memoRef.current?.id;
@@ -2625,7 +2660,11 @@ const RichEditorPane = ({
       return;
     }
 
+    let previousProperties = getFrontMatterSource(editor.getJSON() as TiptapDoc);
     const persistDraft = () => {
+      const source = getFrontMatterSource(editor.getJSON() as TiptapDoc);
+      if (source !== previousProperties) applyPropertyFields(source);
+      previousProperties = source;
       if (hydratingRef.current || memoRef.current?.isDeleted) {
         return;
       }
@@ -2637,7 +2676,7 @@ const RichEditorPane = ({
     return () => {
       editor.off("update", persistDraft);
     };
-  }, [editor, markDirty, memo, persistCurrentDraft]);
+  }, [applyPropertyFields, editor, markDirty, memo, persistCurrentDraft]);
 
   useEffect(() => {
     const advanceMemoSyncBase = (syncedMemo: MemoDetail | null | undefined) => {
@@ -2726,6 +2765,7 @@ const RichEditorPane = ({
 
   const handleMarkdownSourceChange = useCallback((value: string) => {
     if (revertingUnsafeMarkdownRef.current) return;
+    const previousProperties = splitMarkdownFrontMatter(getMarkdownSource())?.source ?? null;
     if (!setMarkdownSource(value)) {
       revertingUnsafeMarkdownRef.current = true;
       try {
@@ -2735,8 +2775,10 @@ const RichEditorPane = ({
       }
       return;
     }
+    const properties = splitMarkdownFrontMatter(value)?.source ?? null;
+    if (properties !== previousProperties) applyPropertyFields(properties);
     markDirty();
-  }, [getMarkdownSource, markDirty, setMarkdownSource]);
+  }, [applyPropertyFields, getMarkdownSource, markDirty, setMarkdownSource]);
 
   const {
     handleCopyToWeChat,
@@ -3751,9 +3793,6 @@ const RichEditorPane = ({
       };
 
   const editorColumnMatchesArticle = !useMarkdownSourceEditor;
-  const contentColumnMode = desktopFocusMode ? "focus" : editorOutlineCollapsed ? "collapsed" : "reading";
-  const contentColumnMaxWidth = editorContentColumnMaxWidth(editorContentWidth, contentColumnMode);
-  const focusTitleMaxWidth = editorContentColumnMaxWidth(editorContentWidth, "focus");
   const editorPaneTight = editorColumnWidth > 0 && editorColumnWidth < EDITOR_PANE_TIGHT_PX;
   const outlineReservesSpace = !editorPaneTight
     && !isMobileViewport
@@ -3765,7 +3804,7 @@ const RichEditorPane = ({
     aiAssistantOpen,
     desktopColumn: isDesktopColumn,
     columnWidth: Math.max(0, editorColumnWidth - editorScrollbarGutter * 2),
-    articleMaxWidth: Number.parseInt(contentColumnMaxWidth, 10),
+    articleMaxWidth: Number.parseInt(EDITOR_CONTENT_MAX_WIDTH, 10),
     reservedBesideArticle: outlineReservesSpace
       ? Number.parseInt(EDITOR_OUTLINE_WIDTH, 10) + EDITOR_ARTICLE_ROW_GAP_PX
       : 0,
@@ -3846,7 +3885,7 @@ const RichEditorPane = ({
               isDesktopColumn && desktopFocusMode && "mx-auto",
             )}
             style={{
-              ...(isDesktopColumn && desktopFocusMode ? { maxWidth: focusTitleMaxWidth } : {}),
+              ...(isDesktopColumn && desktopFocusMode ? { maxWidth: EDITOR_CONTENT_MAX_WIDTH } : {}),
               ...(titleStatusClearancePx > 0 ? { paddingRight: titleStatusClearancePx } : {}),
             }}
           >
@@ -3874,9 +3913,11 @@ const RichEditorPane = ({
                 value={title}
                 readOnly={effectiveReadOnly}
                 onValueChange={(nextTitle) => {
+                  if (memoFieldsRef.current.memoId === memo.id) memoFieldsRef.current = { ...memoFieldsRef.current, title: nextTitle };
                   setMemoFields((fields) => fields.memoId === memo.id
                     ? { ...fields, title: nextTitle }
                     : fields);
+                  updatePropertyField("title", nextTitle);
                   persistCurrentDraft(nextTitle, tagsText, getMobilePlainTextValue());
                   markDirty();
                 }}
@@ -3898,9 +3939,11 @@ const RichEditorPane = ({
             onMobileNotebookPickerOpenChange={setMobileNotebookSheetOpen}
             onNotebookChange={handleNotebookChange}
             onTagsChange={(nextTagsText) => {
+              if (memoFieldsRef.current.memoId === memo.id) memoFieldsRef.current = { ...memoFieldsRef.current, tagsText: nextTagsText };
               setMemoFields((fields) => fields.memoId === memo.id
                 ? { ...fields, tagsText: nextTagsText }
                 : fields);
+              updatePropertyField("tags", parseTagsText(nextTagsText));
               persistCurrentDraft(title, nextTagsText, getMobilePlainTextValue());
               markDirty();
             }}
@@ -4309,7 +4352,7 @@ const RichEditorPane = ({
               useMarkdownSourceEditor && "flex h-full min-h-0 flex-col",
               isDesktopColumn && "mx-auto",
             )}
-            style={isDesktopColumn ? { maxWidth: contentColumnMaxWidth } : undefined}
+            style={isDesktopColumn ? { maxWidth: EDITOR_CONTENT_MAX_WIDTH } : undefined}
           >
             {useMobilePlainTextEditor ? (
               <>

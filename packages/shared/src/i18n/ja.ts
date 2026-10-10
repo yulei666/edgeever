@@ -2,6 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const ja = {
+  noteProperties: {"heading": "ノートのプロパティ", "source": "YAML ソースを表示", "name": "プロパティ名", "type": "プロパティの種類", "add": "プロパティを追加", "remove": "{{name}} を削除", "invalidName": "重複しない、システム予約名以外の名前を入力してください。", "invalidYaml": "プロパティを確認してください：", "invalidNumber": "有効な数値を入力してください。", "listHint": "1 行に 1 つの値", "text": "テキスト", "list": "リスト", "number": "数値", "checkbox": "チェックボックス", "date": "日付"},
   infographic: {
     name: "インフォグラフィック", autoLayout: "自動配置", describe: "説明して生成", chooseTemplate: "テンプレートを選んで入力",
     prompt: "表示したい情報、構成、要点を説明してください", generate: "インフォグラフィックを生成", generating: "生成中…",
@@ -794,12 +795,6 @@ export const ja = {
     editorContentAlignments: {
       center: "読みやすさを優先（中央）",
       start: "左揃え",
-    },
-    editorContentWidthTitle: "本文の幅",
-    editorContentWidthDescription: "この端末の編集領域だけを変えます。",
-    editorContentWidths: {
-      standard: "標準",
-      wide: "広め",
     },
     editorBodyFontSizeTitle: "本文の文字サイズ",
     editorBodyLineHeightTitle: "行間",
@@ -2461,17 +2456,23 @@ export const ja = {
   mathFormulaDialog: {
     title: "数式を挿入",
     editTitle: "数式を編集",
-    description: "LaTeX で数式を書きます。インラインは文中に入り、ブロックは独立した行になります。",
+    description: "記号キーボードで数式を作成するか、LaTeX を編集できます。インライン数式は文中に、ブロック数式は独立した行に表示されます。",
     inline: "インライン",
     block: "ブロック",
     latexLabel: "LaTeX",
     latexPlaceholder: "E = mc^2",
     preview: "プレビュー",
-    previewEmpty: "LaTeX を入力するとプレビューされます",
+    previewEmpty: "数式を入力するとプレビューされます",
     previewError: "この数式を表示できません",
     apply: "適用",
     remove: "数式を削除",
-    errorEmpty: "LaTeX を入力してください。",
+    errorEmpty: "数式を入力してください。",
+    visualLabel: "数式",
+    sourceMode: "LaTeX ソース",
+    visualMode: "ビジュアル編集",
+    loading: "数式エディターを読み込み中…",
+    loadError: "ビジュアルエディターを読み込めませんでした。LaTeX で編集できます。",
+    incomplete: "空欄に入力し、Tab キーで次の空欄へ移動",
   },
   noteLinkPicker: {
     title: "ノートをリンク",

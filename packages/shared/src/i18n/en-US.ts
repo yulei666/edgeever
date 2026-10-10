@@ -2,6 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const enUS = {
+  noteProperties: {"heading": "Note properties", "source": "Show YAML source", "name": "Property name", "type": "Property type", "add": "Add property", "remove": "Remove {{name}}", "invalidName": "Use a unique name that is not a system property.", "invalidYaml": "Properties need attention:", "invalidNumber": "Enter a valid number.", "listHint": "One value per line", "text": "Text", "list": "List", "number": "Number", "checkbox": "Checkbox", "date": "Date"},
   infographic: {
     name: "Infographic", autoLayout: "Auto layout", describe: "Describe and generate", chooseTemplate: "Choose a template and fill content",
     prompt: "Describe the information, structure, and key points", generate: "Generate infographic", generating: "Generating…",
@@ -794,12 +795,6 @@ export const enUS = {
     editorContentAlignments: {
       center: "Optimize readability (centered)",
       start: "Align left",
-    },
-    editorContentWidthTitle: "Text width",
-    editorContentWidthDescription: "Changes the editor width on this device only.",
-    editorContentWidths: {
-      standard: "Standard",
-      wide: "Wider",
     },
     editorBodyFontSizeTitle: "Text size",
     editorBodyLineHeightTitle: "Line height",
@@ -2461,17 +2456,23 @@ export const enUS = {
   mathFormulaDialog: {
     title: "Insert formula",
     editTitle: "Edit formula",
-    description: "Write the formula in LaTeX. Inline math sits in a sentence; a display formula gets its own line.",
+    description: "Build formulas visually or edit LaTeX. Inline formulas stay in the sentence; display formulas occupy their own line.",
     inline: "Inline",
     block: "Display",
     latexLabel: "LaTeX",
     latexPlaceholder: "E = mc^2",
     preview: "Preview",
-    previewEmpty: "Preview appears after you enter LaTeX",
+    previewEmpty: "Enter a formula to preview it",
     previewError: "Could not render this formula",
     apply: "Apply",
     remove: "Delete formula",
-    errorEmpty: "Enter LaTeX.",
+    errorEmpty: "Please enter a formula.",
+    visualLabel: "Formula",
+    sourceMode: "LaTeX source",
+    visualMode: "Visual editor",
+    loading: "Loading formula editor…",
+    loadError: "The visual editor could not load. You can continue with LaTeX.",
+    incomplete: "Type in an empty slot; press Tab for the next one",
   },
   noteLinkPicker: {
     title: "Link a note",

@@ -2,6 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const pl = {
+  noteProperties: {"heading": "Właściwości notatki", "source": "Pokaż źródło YAML", "name": "Nazwa właściwości", "type": "Typ właściwości", "add": "Dodaj właściwość", "remove": "Usuń {{name}}", "invalidName": "Użyj unikalnej nazwy, która nie jest właściwością systemową.", "invalidYaml": "Sprawdź właściwości:", "invalidNumber": "Wprowadź poprawną liczbę.", "listHint": "Jedna wartość w wierszu", "text": "Tekst", "list": "Lista", "number": "Liczba", "checkbox": "Pole wyboru", "date": "Data"},
   infographic: {
     name: "Infografika", autoLayout: "Układ automatyczny", describe: "Opisz i wygeneruj", chooseTemplate: "Wybierz szablon i uzupełnij treść",
     prompt: "Opisz informacje, strukturę i kluczowe punkty", generate: "Wygeneruj infografikę", generating: "Generowanie…",
@@ -794,12 +795,6 @@ export const pl = {
     editorContentAlignments: {
       center: "Optymalna czytelność (wyśrodkowanie)",
       start: "Wyrównaj do lewej",
-    },
-    editorContentWidthTitle: "Szerokość tekstu",
-    editorContentWidthDescription: "Zmienia szerokość edytora tylko na tym urządzeniu.",
-    editorContentWidths: {
-      standard: "Standardowa",
-      wide: "Szersza",
     },
     editorBodyFontSizeTitle: "Rozmiar tekstu",
     editorBodyLineHeightTitle: "Interlinia",
@@ -2461,17 +2456,23 @@ export const pl = {
   mathFormulaDialog: {
     title: "Wstaw wzór",
     editTitle: "Edytuj wzór",
-    description: "Zapisz wzór w LaTeX. Wzór w tekście jest częścią zdania, a wzór wyróżniony zajmuje osobny wiersz.",
+    description: "Twórz wzory za pomocą klawiatury symboli lub edytuj LaTeX. Wzory liniowe pozostają w zdaniu, a blokowe zajmują osobny wiersz.",
     inline: "W tekście",
     block: "Wyróżniony",
     latexLabel: "LaTeX",
     latexPlaceholder: "E = mc^2",
     preview: "Podgląd",
-    previewEmpty: "Podgląd pojawi się po wpisaniu kodu LaTeX",
+    previewEmpty: "Wpisz wzór, aby zobaczyć podgląd",
     previewError: "Nie udało się wyrenderować tego wzoru",
     apply: "Zastosuj",
     remove: "Usuń wzór",
-    errorEmpty: "Wpisz kod LaTeX.",
+    errorEmpty: "Wpisz wzór.",
+    visualLabel: "Wzór",
+    sourceMode: "Kod LaTeX",
+    visualMode: "Edytor wizualny",
+    loading: "Ładowanie edytora wzorów…",
+    loadError: "Nie udało się załadować edytora wizualnego. Możesz użyć LaTeX.",
+    incomplete: "Wpisz w pustym polu; Tab przechodzi do następnego",
   },
   noteLinkPicker: {
     title: "Połącz z notatką",
