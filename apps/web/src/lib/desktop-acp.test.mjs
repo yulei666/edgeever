@@ -31,6 +31,23 @@ test("a prompt-time login failure takes priority over an earlier successful sess
   expect(displayedDesktopAcpAdapter({ id: "grokBuild", path: "", listed: [current], probed: earlierProbe })).toBe(current);
 });
 
+test("a prompt connection failure replaces a stale successful probe", () => {
+  const earlierProbe = { id: "codex", label: "Codex", state: "available" };
+  for (const state of ["failed", "needs_login", "not_installed"]) {
+    const current = { id: "codex", label: "Codex", state };
+    expect(displayedDesktopAcpAdapter({ id: "codex", path: "", listed: [current], probed: earlierProbe })).toBe(current);
+  }
+});
+
+test("custom Antigravity failures replace only a probe for the same custom path", () => {
+  const earlierProbe = { id: "antigravity", label: "Antigravity", state: "available" };
+  const current = { id: "antigravity", label: "Antigravity", state: "failed", customPath: "/tmp/agy-acp" };
+  const input = { id: "antigravity", path: "/tmp/agy-acp", listed: [current], probed: earlierProbe };
+  expect(displayedDesktopAcpAdapter(input)).toBe(current);
+  expect(displayedDesktopAcpAdapter({ ...input, path: "/tmp/another-acp" })).toBe(earlierProbe);
+  expect(displayedDesktopAcpAdapter({ ...input, path: "" })).toBe(earlierProbe);
+});
+
 test("switching into an external agent starts a fresh chat without changing built-in chats", async () => {
   const { startsNewLocalAgentThread } = await import("./desktop-acp.ts");
   const builtin = { source: "builtin", adapterId: "codex" };

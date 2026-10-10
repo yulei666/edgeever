@@ -17,6 +17,7 @@ import {
 } from "@/lib/desktop-acp";
 import { aiErrorMessage, formatProviderOrdinal, isLegacyProviderDisplayName } from "../settings/ai-provider-options";
 import { resolveBuiltinAgentModel } from "./builtin-agent-model";
+import { AgentLogo } from "./AgentLogo";
 
 export function AiAgentSelector({ source, adapterId, disabled, onPendingChange }: {
   source: AiSidebarSource;
@@ -117,6 +118,7 @@ export function AiAgentSelector({ source, adapterId, disabled, onPendingChange }
           <button type="button" disabled={disabled || mutation.isPending}
             aria-label={`${t("aiAssistant.agentSource.switch")} · ${label}`}
             className="flex w-full min-w-0 items-center gap-1 rounded-full px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 disabled:opacity-50">
+            {source === "local" && adapterId ? <AgentLogo id={adapterId} /> : null}
             <span className="truncate">{buttonLabel}</span>
             {mutation.isPending ? <Loader2 className="size-3 shrink-0 animate-spin" /> : <ChevronDown className="size-3 shrink-0" />}
           </button>
@@ -152,7 +154,7 @@ export function AiAgentSelector({ source, adapterId, disabled, onPendingChange }
                           aria-disabled={!available || mutation.isPending} aria-label={`${name} · ${status}`}
                           className="aria-disabled:text-slate-400" onSelect={(event) => event.preventDefault()}>
                           <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                            <span className="min-w-0 break-words">{name}</span>
+                            <span className="flex min-w-0 items-center gap-2"><AgentLogo id={agent.id} /><span className="min-w-0 break-words">{name}</span></span>
                             <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${available ? "bg-[#16A06E]" : "bg-amber-500"} ${checking ? "motion-safe:animate-pulse" : ""}`} />
                           </span>
                         </DropdownMenuRadioItem>

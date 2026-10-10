@@ -130,8 +130,8 @@ interface EdgeEverDesktopBridge {
     managed?: boolean;
     authMethods?: Array<{ id: string; name: string }>;
   }>;
-  installAcpAdapter?(id: "codex" | "antigravity" | "piAgent"): Promise<{ updated: boolean; version?: string; adapter?: {
-    id: "codex" | "antigravity" | "piAgent";
+  installAcpAdapter?(id: "codex" | "claudeCode" | "antigravity" | "piAgent"): Promise<{ updated: boolean; version?: string; adapter?: {
+    id: "codex" | "claudeCode" | "antigravity" | "piAgent";
     label: string;
     state: "not_installed" | "needs_login" | "available" | "failed";
     detail?: string;
