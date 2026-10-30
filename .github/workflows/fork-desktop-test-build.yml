@@ -65,8 +65,13 @@ jobs:
           EDGE_EVER_DESKTOP_ARCH: arm64
         run: bun scripts/run-desktop-builder.mjs --publish never
 
+      # macOS names the executable after productName, so look it up instead of hard-coding it.
       - name: Verify packaged first launch
-        run: bun run verify:packaged-desktop-startup -- "release/desktop/mac-arm64/EdgeEver Test.app/Contents/MacOS/EdgeEver"
+        run: |
+          executable="$(find "release/desktop/mac-arm64/EdgeEver Test.app/Contents/MacOS" -maxdepth 1 -type f -perm -u+x -print -quit)"
+          test -n "$executable"
+          echo "Executable: $executable"
+          bun run verify:packaged-desktop-startup -- "$executable"
 
       - name: Upload test app
         uses: actions/upload-artifact@v4
