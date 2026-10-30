@@ -1085,7 +1085,7 @@ export const ru = {
       cancel: "Отмена",
       imgbed: {
         option: "CloudFlare ImgBed",
-        description: "Загружать новые изображения прямо в ваш CloudFlare ImgBed и вставлять полученную ссылку в заметку.",
+        description: "Загружать новые изображения прямо в ваш <link>CloudFlare ImgBed</link> и вставлять полученную ссылку в заметку.",
         endpoint: "Адрес ImgBed",
         endpointDescription: "Укажите адрес сайта ImgBed, например https://img.example.com. Не добавляйте /upload — он подставляется автоматически при загрузке.",
         token: "API-токен",

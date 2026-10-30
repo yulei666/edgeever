@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { expandImgBedFolder, imgBedFolderError, IMGBED_FOLDER_PLACEHOLDERS, IMGBED_NAME_TYPES, IMGBED_SAMPLE_MEMO_ID, IMGBED_UPLOAD_CHANNELS, type ImgBedNameType, type ImgBedUploadChannel } from "@/lib/imgbed";
 import { hasImgBedBridge, hasPicGoBridge, readPicGoPreference, takePicGoServerKey, writePicGoPreference, type ImgBedPreference, type PicGoPreference } from "@/lib/picgo";
 import { SETTINGS_ITEM_DESCRIPTION_CLASSNAME, SETTINGS_ITEM_TITLE_CLASSNAME } from "./settings-ui";
+
+const IMGBED_REPOSITORY_URL = "https://github.com/MarSeventh/CloudFlare-ImgBed";
 
 const picGoTargetId = (value: PicGoPreference) => value.provider === "imgbed"
   ? ["imgbed", value.imgbed.endpoint, value.imgbed.token, value.imgbed.uploadFolder, value.imgbed.nameType,
@@ -108,7 +110,11 @@ export const PicGoSettingsItem = () => {
       {draft.provider === "imgbed" ? (
         <div className="grid gap-2 sm:ml-7">
           {!desktopAvailable ? <p className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.picgo.webPreview")}</p> : null}
-          <p className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.picgo.imgbed.description")}</p>
+          <p className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>
+            <Trans i18nKey="settings.picgo.imgbed.description" components={{
+              link: <a href={IMGBED_REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-slate-950" />,
+            }} />
+          </p>
           <label htmlFor="imgbed-endpoint" className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.picgo.imgbed.endpoint")}</label>
           <Input id="imgbed-endpoint" value={draft.imgbed.endpoint} disabled={busy} placeholder="https://img.example.com"
             onChange={(event) => updateImgBed({ endpoint: event.target.value.trim() })} spellCheck={false} inputMode="url" autoComplete="off" />
