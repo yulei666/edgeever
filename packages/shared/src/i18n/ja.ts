@@ -1076,6 +1076,7 @@ export const ja = {
         option: "CloudFlare ImgBed",
         description: "新しく挿入した画像を自前の CloudFlare ImgBed に直接アップロードし、返された画像リンクをノートに挿入します。",
         endpoint: "ImgBed アドレス",
+        endpointDescription: "ImgBed のサイトアドレス（例：https://img.example.com）を入力します。/upload は含めないでください。アップロード時に自動で付加されます。",
         token: "API トークン",
         tokenDescription: "ImgBed の管理画面で upload 権限付きで作成します。トークンはこのパソコンに保存され、アップロードごとに送信されるため、HTTPS のアドレスを使ってください。",
         folder: "アップロード先フォルダー",

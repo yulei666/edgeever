@@ -1087,6 +1087,7 @@ export const enUS = {
         option: "CloudFlare ImgBed",
         description: "Upload new images directly to your self-hosted CloudFlare ImgBed and insert the returned image link into the note.",
         endpoint: "ImgBed address",
+        endpointDescription: "Enter the ImgBed site address, such as https://img.example.com. Don't include /upload; it is added automatically when uploading.",
         token: "API token",
         tokenDescription: "Create it in the ImgBed admin panel with the upload permission. The token is stored on this computer and sent with every upload, so use an HTTPS address.",
         folder: "Upload folder",

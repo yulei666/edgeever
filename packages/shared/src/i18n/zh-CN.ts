@@ -1087,6 +1087,7 @@ export const zhCN = {
         option: "CloudFlare ImgBed",
         description: "把新插入的图片直接上传到你自建的 CloudFlare ImgBed，并把返回的图片链接写入笔记。",
         endpoint: "ImgBed 地址",
+        endpointDescription: "填写 ImgBed 站点地址，例如 https://img.example.com。不要包含 /upload，上传时会自动补上。",
         token: "API Token",
         tokenDescription: "在 ImgBed 管理界面创建，需要 upload 权限。Token 保存在这台电脑上，并随每次上传发送，请使用 HTTPS 地址。",
         folder: "上传目录",
