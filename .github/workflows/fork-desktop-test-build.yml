@@ -1,0 +1,80 @@
+name: Fork Desktop Test Build
+
+# Fork-only test build. It never runs in the official repository, is unsigned,
+# and installs as a separate app ("EdgeEver Test", org.edgeever.desktop.test)
+# with its own data directory and no update feed, next to the official EdgeEver.
+on:
+  push:
+    branches:
+      - "test/desktop-**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-desktop-test-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-arm64:
+    if: github.repository != 'tianma-if/edgeever'
+    name: Build unsigned macOS arm64 test app
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Use a separate test app identity without updates
+        run: |
+          node -e '
+            const fs = require("fs");
+            const file = "apps/desktop/electron-builder.yml";
+            let text = fs.readFileSync(file, "utf8");
+            const replace = (from, to) => {
+              if (!text.includes(from)) throw new Error(`missing: ${from}`);
+              text = text.replace(from, to);
+            };
+            replace("appId: org.edgeever.desktop\n", "appId: org.edgeever.desktop.test\n");
+            replace("productName: EdgeEver\n", "productName: EdgeEver Test\n");
+            replace("publish:\n  provider: github\n  owner: tianma-if\n  repo: edgeever\n  releaseType: release\n", "publish: null\n");
+            fs.writeFileSync(file, text);
+          '
+          head -6 apps/desktop/electron-builder.yml
+
+      - name: Build Web renderer
+        env:
+          EDGE_EVER_DESKTOP_BUILD: "1"
+        run: bun run build:web
+
+      - name: Build Rust sidecar
+        run: cargo build --manifest-path crates/desktop-sidecar/Cargo.toml --release
+
+      - name: Package unsigned desktop app
+        env:
+          EDGE_EVER_DESKTOP_ARCH: arm64
+        run: bun scripts/run-desktop-builder.mjs --publish never
+
+      - name: Verify packaged first launch
+        run: bun run verify:packaged-desktop-startup -- "release/desktop/mac-arm64/EdgeEver Test.app/Contents/MacOS/EdgeEver"
+
+      - name: Upload test app
+        uses: actions/upload-artifact@v4
+        with:
+          name: edgeever-desktop-test-macos-arm64
+          path: |
+            release/desktop/*.dmg
+            release/desktop/*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
