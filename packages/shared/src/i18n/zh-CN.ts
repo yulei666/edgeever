@@ -1085,7 +1085,7 @@ export const zhCN = {
       cancel: "取消",
       imgbed: {
         option: "CloudFlare ImgBed",
-        description: "把新插入的图片直接上传到你自建的 <link>CloudFlare ImgBed</link>，并把返回的图片链接写入笔记。",
+        description: "把新插入的图片直接上传到你自建的 CloudFlare ImgBed，并把返回的图片链接写入笔记。",
         endpoint: "ImgBed 地址",
         endpointDescription: "填写 ImgBed 站点地址，例如 https://img.example.com。不要包含 /upload，上传时会自动补上。",
         token: "API Token",

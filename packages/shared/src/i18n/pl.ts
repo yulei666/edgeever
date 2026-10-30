@@ -1074,7 +1074,7 @@ export const pl = {
       cancel: "Anuluj",
       imgbed: {
         option: "CloudFlare ImgBed",
-        description: "Przesyłaj nowe obrazy bezpośrednio do własnego <link>CloudFlare ImgBed</link> i wstawiaj zwrócony link do notatki.",
+        description: "Przesyłaj nowe obrazy bezpośrednio do własnego CloudFlare ImgBed i wstawiaj zwrócony link do notatki.",
         endpoint: "Adres ImgBed",
         endpointDescription: "Podaj adres witryny ImgBed, np. https://img.example.com. Nie dodawaj /upload — zostanie dodane automatycznie podczas przesyłania.",
         token: "Token API",

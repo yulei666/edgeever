@@ -1074,7 +1074,7 @@ export const ja = {
       cancel: "キャンセル",
       imgbed: {
         option: "CloudFlare ImgBed",
-        description: "新しく挿入した画像を自前の <link>CloudFlare ImgBed</link> に直接アップロードし、返された画像リンクをノートに挿入します。",
+        description: "新しく挿入した画像を自前の CloudFlare ImgBed に直接アップロードし、返された画像リンクをノートに挿入します。",
         endpoint: "ImgBed アドレス",
         endpointDescription: "ImgBed のサイトアドレス（例：https://img.example.com）を入力します。/upload は含めないでください。アップロード時に自動で付加されます。",
         token: "API トークン",
