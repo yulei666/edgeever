@@ -47,6 +47,7 @@ jobs:
             };
             replace("appId: org.edgeever.desktop\n", "appId: org.edgeever.desktop.test\n");
             replace("productName: EdgeEver\n", "productName: EdgeEver Test\n");
+            replace("executableName: EdgeEver\n", "executableName: EdgeEver Test\n");
             replace("publish:\n  provider: github\n  owner: tianma-if\n  repo: edgeever\n  releaseType: release\n", "publish: null\n");
             fs.writeFileSync(file, text);
           '
@@ -65,13 +66,25 @@ jobs:
           EDGE_EVER_DESKTOP_ARCH: arm64
         run: bun scripts/run-desktop-builder.mjs --publish never
 
-      # macOS names the executable after productName, so look it up instead of hard-coding it.
-      - name: Verify packaged first launch
+      # Refuse a bundle that could replace the official EdgeEver.app or share its data.
+      - name: Check test app identity
+        id: bundle
         run: |
-          executable="$(find "release/desktop/mac-arm64/EdgeEver Test.app/Contents/MacOS" -maxdepth 1 -type f -perm -u+x -print -quit)"
-          test -n "$executable"
-          echo "Executable: $executable"
-          bun run verify:packaged-desktop-startup -- "$executable"
+          ls -la release/desktop/mac-arm64
+          bundle="$(find release/desktop/mac-arm64 -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$bundle"
+          plist="$bundle/Contents/Info.plist"
+          identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")"
+          name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' "$plist")"
+          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist")"
+          echo "Bundle: $bundle"; echo "CFBundleIdentifier: $identifier"; echo "CFBundleName: $name"; echo "CFBundleExecutable: $executable"
+          test "$(basename "$bundle")" != "EdgeEver.app"
+          test "$identifier" = "org.edgeever.desktop.test"
+          test "$name" = "EdgeEver Test"
+          echo "executable=$bundle/Contents/MacOS/$executable" >> "$GITHUB_OUTPUT"
+
+      - name: Verify packaged first launch
+        run: bun run verify:packaged-desktop-startup -- "${{ steps.bundle.outputs.executable }}"
 
       - name: Upload test app
         uses: actions/upload-artifact@v4
