@@ -49,6 +49,8 @@ jobs:
             replace("productName: EdgeEver\n", "productName: EdgeEver Test\n");
             replace("executableName: EdgeEver\n", "executableName: EdgeEver Test\n");
             replace("publish:\n  provider: github\n  owner: tianma-if\n  repo: edgeever\n  releaseType: release\n", "publish: null\n");
+            // A test install only needs the DMG.
+            replace("    - target: dmg\n    - target: zip\n", "    - target: dmg\n");
             fs.writeFileSync(file, text);
           '
           head -6 apps/desktop/electron-builder.yml
@@ -90,9 +92,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: edgeever-desktop-test-macos-arm64
-          path: |
-            release/desktop/*.dmg
-            release/desktop/*.zip
+          path: release/desktop/*.dmg
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
