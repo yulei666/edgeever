@@ -1085,7 +1085,7 @@ export const enUS = {
       cancel: "Cancel",
       imgbed: {
         option: "CloudFlare ImgBed",
-        description: "Upload new images directly to your self-hosted CloudFlare ImgBed and insert the returned image link into the note.",
+        description: "Upload new images directly to your self-hosted <link>CloudFlare ImgBed</link> and insert the returned image link into the note.",
         endpoint: "ImgBed address",
         endpointDescription: "Enter the ImgBed site address, such as https://img.example.com. Don't include /upload; it is added automatically when uploading.",
         token: "API token",
