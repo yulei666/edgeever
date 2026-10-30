@@ -1087,6 +1087,7 @@ export const ru = {
         option: "CloudFlare ImgBed",
         description: "Загружать новые изображения прямо в ваш CloudFlare ImgBed и вставлять полученную ссылку в заметку.",
         endpoint: "Адрес ImgBed",
+        endpointDescription: "Укажите адрес сайта ImgBed, например https://img.example.com. Не добавляйте /upload — он подставляется автоматически при загрузке.",
         token: "API-токен",
         tokenDescription: "Создайте его в панели ImgBed с правом upload. Токен хранится на этом компьютере и отправляется с каждой загрузкой, поэтому используйте адрес HTTPS.",
         folder: "Папка загрузки",

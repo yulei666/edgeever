@@ -112,6 +112,7 @@ export const PicGoSettingsItem = () => {
           <label htmlFor="imgbed-endpoint" className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.picgo.imgbed.endpoint")}</label>
           <Input id="imgbed-endpoint" value={draft.imgbed.endpoint} disabled={busy} placeholder="https://img.example.com"
             onChange={(event) => updateImgBed({ endpoint: event.target.value.trim() })} spellCheck={false} inputMode="url" autoComplete="off" />
+          <p className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.picgo.imgbed.endpointDescription")}</p>
           <label htmlFor="imgbed-token" className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.picgo.imgbed.token")}</label>
           <Input id="imgbed-token" name="imgbed-token" type="password" value={draft.imgbed.token} disabled={busy}
             onChange={(event) => updateImgBed({ token: event.target.value.trim() })} spellCheck={false} autoComplete="new-password" maxLength={1024} />
