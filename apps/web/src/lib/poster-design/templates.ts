@@ -25,8 +25,13 @@ import { resolvePair, usePairing } from "./vendor/qiaomu/typeset";
 import { POSTER_FONTS, loadDesignFonts } from "./fonts";
 import { matchesImageSlot, type ImageSlot } from "../poster-image-replacement";
 import { composePosterTemplate, posterTemplateHeaderHeight } from "../poster-template-content";
-import { paperListCurrentCopy, paperListSelectionCopy } from "./paper-list-content";
+import {
+  paperListCurrentCopy,
+  posterTemplateSampleCopy,
+  posterTemplateSelectionCopy,
+} from "./paper-list-content";
 export { PLATFORMS, platformFor } from "./vendor/qiaomu/platforms";
+export { posterTemplateSampleCopy };
 export const DESIGN_TEMPLATES = TEMPLATES;
 export { templatesFor };
 const hex = (color: string | undefined) =>
@@ -284,7 +289,7 @@ export async function applyPosterDesign(document: PosterDocument, templateId: st
   if (!TEMPLATES.some(template => template.id === templateId)) throw new Error("Unknown poster template");
   if (document.elements.some(element => element.locked)) throw new Error("Locked poster elements");
   const headerHeight = posterTemplateHeaderHeight(document, height);
-  const copy = templateId === "paper-list" ? paperListSelectionCopy(document, posterCopy(document), zh, starterCopy) : posterCopy(document);
+  const copy = posterTemplateSelectionCopy(document, posterCopy(document), templateId, zh, starterCopy);
   const cover = await buildPosterDesign({ id: templateId, ...copy, width, height: Math.max(320, headerHeight), zh });
   return composePosterTemplate(document, cover, width, height, headerHeight);
 }

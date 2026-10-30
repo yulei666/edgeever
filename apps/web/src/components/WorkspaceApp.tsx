@@ -2047,8 +2047,9 @@ export const WorkspaceApp = ({
     setMobileBottomNavActive("home");
     creatingMemoSelectionRef.current = true;
     if (kind === "poster") {
-      void import("@/lib/poster-design/templates").then(async ({ buildPosterDesign }) => {
-        const poster = await buildPosterDesign({ id: "folio", title: t("poster.defaultHeading"), subtitle: t("poster.defaultSubtitle"), width: 1080, height: 1440, zh: prefersChineseContent(i18n.language) });
+      void import("@/lib/poster-design/templates").then(async ({ buildPosterDesign, posterTemplateSampleCopy }) => {
+        const zh = prefersChineseContent(i18n.language);
+        const poster = await buildPosterDesign({ id: "folio", ...posterTemplateSampleCopy("folio", zh), width: 1080, height: 1440, zh });
         createMemoMutation.mutate({ notebookId: targetNotebookId, title: t("poster.name"), contentJson: markdownToDoc(posterFallbackMarkdown(poster)), contentMarkdown: serializePosterDocument(poster), tags: [] });
       }).catch(() => {
         createMemoInFlightRef.current = false;

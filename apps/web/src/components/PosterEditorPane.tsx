@@ -313,7 +313,7 @@ export default function PosterEditorPane({
       ),
     };
     if ("text" in patch) {
-      const copy = { ...posterCopy(value) };
+      const copy = { ...posterCopy(next) };
       for (const role of ["title", "subtitle", "badge"] as const)
         if (
           value.elements.some(
@@ -758,7 +758,7 @@ export default function PosterEditorPane({
           ? posterElementFromObject(element, objectsRef.current[index])
           : element,
       );
-      const copy = { ...posterCopy(value) };
+      const copy = { ...posterCopy({ ...value, elements }) };
       for (const role of ["title", "subtitle", "badge"] as const)
         if (
           elements.some(

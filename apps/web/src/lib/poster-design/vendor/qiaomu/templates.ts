@@ -731,7 +731,7 @@ const PREMIUM: Template[] = [
         : [[gx, gy, gw, gh * 0.46 - gap / 2], [gx, gy + gh * 0.46 + gap / 2, gw / 2 - gap / 2, gh * 0.54 - gap / 2], [gx + gw / 2 + gap / 2, gy + gh * 0.46 + gap / 2, gw / 2 - gap / 2, gh * 0.54 - gap / 2]];
       const cards = items.flatMap((label, k) => { const [sx, sy, sw, sh] = slots[k]! as [number, number, number, number]; const big = k === 0;
         return [rect(sx, sy, sw, sh, colors[k]!, { rx: 40 * u, ry: 40 * u }), textbox(String(k + 1).padStart(2, '0'), sx + 28 * u, sy + 22 * u, sw - 50 * u, { fontSize: Math.max(40, (big ? 120 : 88) * u), fill: 'rgba(0,0,0,0.28)', fontWeight: 'bold', lineHeight: 1, charSpacing: -30 }),
-          textbox(label, sx + 28 * u, sy + sh - 28 * u - Math.max(36, (big ? 64 : 48) * u) * 2.4, sw - 56 * u, { fontSize: Math.max(26, (big ? 60 : 46) * u), fill: p.ink, fontWeight: 'bold', lineHeight: 1.12 })]; });
+          Object.assign(textbox(label, sx + 28 * u, sy + sh - 28 * u - Math.max(36, (big ? 64 : 48) * u) * 2.4, sw - 56 * u, { fontSize: Math.max(26, (big ? 60 : 46) * u), fill: p.ink, fontWeight: 'bold', lineHeight: 1.12 }), { qcName: `poster:item:${k}` })]; });
       return { background: solid(p.bg), objects: keep<FabricObject>(
         grain(w, h, 0.06, 43),
         rect(x0, y0, hw, hh, '#141414', { rx: 40 * u, ry: 40 * u }),
@@ -893,14 +893,14 @@ const PREMIUM: Template[] = [
       const polyA = wide ? [{ x: 0, y: py }, { x: w / 2 + slant, y: py }, { x: w / 2 - slant, y: h }, { x: 0, y: h }] : [{ x: 0, y: py }, { x: w, y: py }, { x: w, y: py + ph / 2 - slant }, { x: 0, y: py + ph / 2 + slant }];
       const polyB = wide ? [{ x: w / 2 + slant, y: py }, { x: w, y: py }, { x: w, y: h }, { x: w / 2 - slant, y: h }] : [{ x: 0, y: py + ph / 2 + slant }, { x: w, y: py + ph / 2 - slant }, { x: w, y: h }, { x: 0, y: h }];
       const aBox = wide ? { x: m, y: py + ph * 0.3, w: w / 2 - slant - m * 1.4 } : { x: m, y: py + ph * 0.12, w: tw }; const bBox = wide ? { x: w / 2 + slant + m * 0.6, y: py + ph * 0.3, w: w / 2 - slant - m * 1.4 } : { x: m, y: py + ph * 0.62, w: tw };
-      const lab = (txt: string, box: { x: number; y: number; w: number }, color: string, mark: string): FabricObject[] => { const sz = fitTitle(txt, box.w, ph * (wide ? 0.4 : 0.2), 130 * u, 30, 1.05); return [textbox(mark, box.x, box.y - 70 * u, box.w, { fontSize: Math.max(24, 40 * u), fill: color, fontWeight: 'bold', charSpacing: 200 }), textbox(txt, box.x, box.y, box.w, { fontSize: sz, fill: color, fontWeight: 'bold', lineHeight: 1.05, charSpacing: -14 })]; };
+      const lab = (txt: string, box: { x: number; y: number; w: number }, color: string, mark: string, index: number): FabricObject[] => { const sz = fitTitle(txt, box.w, ph * (wide ? 0.4 : 0.2), 130 * u, 30, 1.05); return [textbox(mark, box.x, box.y - 70 * u, box.w, { fontSize: Math.max(24, 40 * u), fill: color, fontWeight: 'bold', charSpacing: 200 }), Object.assign(textbox(txt, box.x, box.y, box.w, { fontSize: sz, fill: color, fontWeight: 'bold', lineHeight: 1.05, charSpacing: -14 }), { qcName: `poster:compare:${index}` })]; };
       return { background: solid(p.bg), objects: keep<FabricObject>(
         new Polygon(polyA, { fill: dull, originX: 'left', originY: 'top' }), ...dotGrid(m * 0.4, py + 20 * u, 12, 14, 70 * u, 6 * u, '#9a9387', 0.35),
         new Polygon(polyB, { fill: p.accent, originX: 'left', originY: 'top' }), rays(wide ? w * 0.78 : w * 0.7, wide ? h * 0.7 : py + ph * 0.8, Math.max(w, h), 16, '#ffffff', 0.18), sparkle(w - m * 1.2, py + (wide ? ph * 0.15 : ph * 0.58), 70 * u, '#111111', 10),
         grain(w, h, 0.08, 51), rect(0, 0, w, barH, '#111111'),
         ...badge(i.badge, m, m * 0.6, { ...p, accent: p.accent, accentInk: p.accentInk }, Math.max(18, 24 * u)),
         textbox(i.title, m, (barH - th) / 2 + (i.badge?.trim() ? 14 * u : 0), tw, { qcRole: 'title', fontSize: size, fill: '#ffffff', fontWeight: 'bold', lineHeight: 1.04, textAlign: 'center', charSpacing: -10 }),
-        ...lab(A, aBox, dullInk, '✕  BEFORE'), ...lab(B, bBox, '#111111', '✓  AFTER'),
+        ...lab(A, aBox, dullInk, '✕  BEFORE', 0), ...lab(B, bBox, '#111111', '✓  AFTER', 1),
         burst(wide ? w / 2 : w / 2, wide ? py + ph / 2 : py + ph / 2, 92 * u, '#111111', 12, 8), textbox('VS', (wide ? w / 2 : w / 2) - 60 * u, (wide ? py + ph / 2 : py + ph / 2) - 34 * u, 120 * u, { fontSize: 62 * u, fill: p.accent, fontWeight: 'bold', textAlign: 'center', angle: 8 }),
         ...(caption ? [textbox(caption, m, h - m * 0.9 - 40 * u, tw, { qcRole: 'subtitle', fontSize: Math.max(22, 30 * u), fill: '#111111', fontWeight: 'bold', textAlign: 'center' })] : []),
       ) };
@@ -1040,18 +1040,21 @@ const STUDIO: Template[] = [
     build(i) {
       const p = palette(i, { bg: '#fbfaf6', bg2: '#fbfaf6', ink: '#1c1c1e', sub: '#7c7c80', accent: '#e2a300', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m; const inner = w - m * 2; const bar = Math.max(26, 44 * u); const dateS = Math.max(18, 26 * u);
-      const list = (i.points ?? []).map(t => t.trim()).filter(Boolean).slice(0, 4); const twoCol = wide && list.length >= 2;
+      const fromPoints = Boolean(i.points?.length);
+      const parsed = (fromPoints ? i.points! : i.subtitle.split(/[\n,，、；;]/)).map(t => t.trim()).filter(Boolean);
+      const list = (fromPoints || parsed.length >= 2 ? parsed : []).slice(0, 4); const twoCol = wide && list.length >= 2;
+      const showSub = fromPoints ? Boolean(i.subtitle.trim()) : list.length < 2 && Boolean(i.subtitle.trim());
       const tw = twoCol ? inner * 0.56 : inner; const top = m * 0.8 + bar * 1.6 + dateS * 3;
       const size = fitTitle(i.title, tw, h * (wide ? 0.5 : 0.36), 190 * u, 36, 1.12); const th = textHeight(i.title, tw, size, 1.12);
-      const subSize = Math.max(26, size * 0.32); const subH = i.subtitle.trim() ? textHeight(i.subtitle, tw, subSize, 1.25) + 30 * u : 0;
+      const subSize = Math.max(26, size * 0.32); const subH = showSub ? textHeight(i.subtitle, tw, subSize, 1.25) + 30 * u : 0;
       const ls = Math.max(26, Math.min(46 * u, size * 0.4)); const lx = twoCol ? x0 + tw + m : x0; const lw = twoCol ? inner - tw - m : inner; const ly0 = twoCol ? top + 8 * u : top + th + subH + 44 * u;
-      const rows = list.length >= 2 ? list.flatMap((t, k) => { const y = ly0 + k * ls * 2.1; return [new Circle({ left: lx, top: y + ls * 0.12, radius: ls * 0.44, fill: k === 0 ? p.accent : 'rgba(0,0,0,0)', stroke: p.accent, strokeWidth: Math.max(2, 3 * u), originX: 'left', originY: 'top' }), textbox(t, lx + ls * 1.4, y, lw - ls * 1.4, { fontSize: ls, fill: p.ink, lineHeight: 1.1 })]; }) : [];
+      const rows = list.length >= 2 ? list.flatMap((t, k) => { const y = ly0 + k * ls * 2.1; return [new Circle({ left: lx, top: y + ls * 0.12, radius: ls * 0.44, fill: k === 0 ? p.accent : 'rgba(0,0,0,0)', stroke: p.accent, strokeWidth: Math.max(2, 3 * u), originX: 'left', originY: 'top' }), Object.assign(textbox(t, lx + ls * 1.4, y, lw - ls * 1.4, { fontSize: ls, fill: p.ink, lineHeight: 1.1 }), { qcName: `poster:item:${k}` })]; }) : [];
       return { background: solid(p.bg), objects: keep<FabricObject>(
         textbox('‹ ' + (i.zh ? '备忘录' : 'Notes'), x0, m * 0.8, inner * 0.5, { fontSize: bar, fill: p.accent, fontWeight: 'bold' }),
         textbox(i.zh ? '完成' : 'Done', x0 + inner * 0.5, m * 0.8, inner * 0.5, { fontSize: bar, fill: p.accent, fontWeight: 'bold', textAlign: 'right' }),
         textbox(i.badge?.trim() || (i.zh ? '今天 · 笔记' : 'Today'), x0, m * 0.8 + bar * 1.6 + dateS * 0.8, inner, { qcRole: 'badge', fontSize: dateS, fill: p.sub, textAlign: 'center' }),
         textbox(i.title, x0, top, tw, { qcRole: 'title', fontSize: size, fill: p.ink, fontWeight: 'bold', lineHeight: 1.12 }),
-        ...sub(i, x0, top + th + 30 * u, tw, subSize, p.sub), ...rows,
+        ...(showSub ? sub(i, x0, top + th + 30 * u, tw, subSize, p.sub) : []), ...rows,
       ) };
     },
   },

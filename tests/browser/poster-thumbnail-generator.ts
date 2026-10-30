@@ -4,7 +4,7 @@ import { renderPosterBlob } from "../../apps/web/src/lib/poster-canvas";
 import { loadPosterFont } from "../../apps/web/src/lib/poster-design/fonts";
 import { installEditorBodyFontFaces } from "../../apps/web/src/lib/editor-body-font-faces";
 installEditorBodyFontFaces();
-import { paperListSampleCopy } from "../../apps/web/src/lib/poster-design/paper-list-content";
+import { posterTemplateSampleCopy } from "../../apps/web/src/lib/poster-design/paper-list-content";
 const prepared = new Map<string, Awaited<ReturnType<typeof buildPosterDesign>>>();
 const recommended = new Set(templatesFor(undefined).map(template => template.id));
 Object.assign(window, {
@@ -13,11 +13,8 @@ Object.assign(window, {
     async prepare(id: string, zh: boolean) {
       const input = {
         id, zh, width: 1080, height: 1440,
-        title: zh ? "把想法\n变成作品" : "MAKE IDEAS\nWORTH SHARING",
-        subtitle: zh ? "一个好想法，值得被看见。" : "Ideas deserve to be seen.",
-        badge: zh ? "创作笔记" : "CREATIVE NOTES",
+        ...posterTemplateSampleCopy(id, zh),
       };
-      if (id === "paper-list") Object.assign(input, paperListSampleCopy(zh));
       const draft = await buildPosterDesign(input);
       const texts = draft.elements.filter(element => element.type === "text");
       // Generation must wait for the actual typefaces; never freeze a temporary
