@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { resolveNoteProse } from "@edgeever/shared";
+import { DEFAULT_NOTE_PROSE_STYLE_PREFERENCES } from "./note-prose-style-preference.ts";
 import { notePrintAppearanceCss, notePrintAppearanceFromProse } from "./note-print-appearance.ts";
 
 describe("note print appearance", () => {
@@ -23,11 +24,23 @@ describe("note print appearance", () => {
     }), "github-light", { choice: "system", customFamily: "" });
     const css = notePrintAppearanceCss(appearance);
 
-    expect(appearance.mermaidTheme).toBe("github-light");
+    expect(appearance.mermaidTheme).toBe("zinc-light");
     expect(appearance.fontFamily).toBeNull();
     expect(css).toContain("--editor-body-font-size: 18px");
     expect(css).toContain("--editor-body-line-height: 1.5");
     expect(css).not.toContain("color: #");
+  });
+
+  test("print uses the selected body rhythm with any heading style", () => {
+    for (const headingStyle of ["default", "bar", "numbered"]) {
+      const appearance = notePrintAppearanceFromProse(resolveNoteProse({}), "github-light",
+        { choice: "system", customFamily: "" },
+        { ...DEFAULT_NOTE_PROSE_STYLE_PREFERENCES, headingStyle, paragraphSpacing: 16, textAlign: "justify", letterSpacing: "1px" });
+      const css = notePrintAppearanceCss(appearance);
+      expect(css).toContain("--editor-paragraph-spacing: 16px");
+      expect(css).toContain("--editor-body-text-align: justify");
+      expect(css).toContain("--editor-body-letter-spacing: 1px");
+    }
   });
 
   test("tints links, bold, checked boxes, and tables with the account palette", () => {

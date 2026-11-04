@@ -1,6 +1,7 @@
 import {
   NOTE_PROSE_PALETTES,
   noteProseCssVariables,
+  noteProseStyleCssVariables,
   type NoteProsePaletteChoice,
   type NoteProseStylePreferences,
   type ResolvedNoteProse,
@@ -9,7 +10,7 @@ import { catalogCodeFontStack, isRemoteNoteImageFont } from "@edgeever/shared/fo
 import { LEGACY_BODY_FONTS } from "@edgeever/shared/font-defaults";
 import type { BodyFontId } from "@edgeever/shared/font-loader";
 import type { MermaidThemeName } from "@/components/ThemeProvider";
-import { MERMAID_THEME_NAMES } from "@/components/ThemeProvider";
+import { normalizeMermaidThemePreference, resolveMermaidTheme } from "@/components/ThemeProvider";
 import { sanitizeAndScopeCss } from "@/lib/css-sandbox";
 import {
   readEditorBodyFontPreference,
@@ -48,13 +49,11 @@ export const notePrintAppearanceFromProse = (
 ): NotePrintAppearance => ({
   palette: prose.palette,
   proseStyle,
-  cssVariables: noteProseCssVariables(prose),
+  cssVariables: { ...noteProseCssVariables(prose), ...noteProseStyleCssVariables(proseStyle) },
   customCss: sanitizeAndScopeCss(prose.customCss),
   fontFamily: resolveEditorBodyFontStack(font) ?? null,
   fontId: loadableBodyFontId(font.choice),
-  mermaidTheme: (MERMAID_THEME_NAMES as readonly string[]).includes(mermaidTheme)
-    ? mermaidTheme as MermaidThemeName
-    : "zinc-light",
+  mermaidTheme: resolveMermaidTheme(normalizeMermaidThemePreference(mermaidTheme), "light"),
 });
 
 const paletteRules = (palette: NoteProsePaletteChoice) => {
@@ -109,9 +108,11 @@ const proseStyleRules = (
   } else if (proseStyle.headingStyle === "numbered") {
     rules.push(
       ".edgeever-print-content { counter-reset: note-prose-h2; }",
-      `.edgeever-print-content h2 { counter-increment: note-prose-h2; padding-bottom: 6px; border-bottom: 2px solid ${divider}; }`,
+      ".edgeever-print-content h1 { font-size: calc(var(--editor-body-font-size, 16px) * 1.75); }",
+      ".edgeever-print-content h4 { font-size: var(--editor-body-font-size, 16px); }",
+      `.edgeever-print-content h2 { font-size: calc(var(--editor-body-font-size, 16px) * 1.4); counter-increment: note-prose-h2; padding-bottom: 6px; border-bottom: 2px solid ${divider}; }`,
       `.edgeever-print-content h2::before { content: counter(note-prose-h2, decimal-leading-zero) " · "; color: ${accent}; font-weight: 800; letter-spacing: 0.04em; }`,
-      `.edgeever-print-content h3 { border-left: 3px solid ${accent}; padding-left: 10px; }`,
+      `.edgeever-print-content h3 { display: block; font-size: calc(var(--editor-body-font-size, 16px) * 1.15); font-weight: 700; line-height: 1.4; letter-spacing: -0.01em; margin: 1.6em 0 0.6em; color: #111827; }`,
     );
   }
   if (proseStyle.quoteStyle === "dashed") {

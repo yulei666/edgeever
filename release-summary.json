@@ -1,26 +1,32 @@
 {
-  "version": "2.18.0",
+  "version": "2.20.0",
   "changes": {
     "en-US": [
-      "Add CodeBuddy as a desktop local Agent, using your installed official CLI (#758, @yulei666 in #761).",
-      "Optionally copy desktop scheduled backups to WebDAV, with separate upload status and retries (#723, @dkoryto in #763).",
-      "Keep untitled notes in search results after editing or deleting attachments (#751, @sivdead in #769).",
-      "Fix opening desktop attachments in system applications by opening a local copy (#768).",
-      "Preserve all PDF pages and blank paragraphs during export; improve WeChat copy formatting and adaptive directory cards."
+      "Add optional authenticator-app two-factor authentication and one-time recovery codes on Web, desktop, Android, and iOS. Save the recovery codes when enabling this feature. (#671; @yulei666, #779)",
+      "Set per-model output limits for text generation, tag suggestions, and the built-in AI sidebar. (#652; @yulei666, #780)",
+      "Navigate shared notes and public notebooks with a collapsible outline. (@sivdead, #785)",
+      "Improve Mermaid rendering on Web, desktop, and Android, including links between subgraphs, and update the example diagrams.",
+      "Keep the editor focused when clicking below an empty note and simplify numbered level-three headings.",
+      "Fix note image exports that contain invalid characters and isolate the desktop backup preview.",
+      "Self-hosted instances: back up your database before upgrading and apply migrations through 0091."
     ],
     "zh-CN": [
-      "桌面端新增 CodeBuddy 本机 Agent，可使用自行安装的官方 CLI（#758，@yulei666 贡献于 #761）。",
-      "桌面端定时备份支持可选的 WebDAV 异地副本，提供独立上传状态和重试（#723，@dkoryto 贡献于 #763）。",
-      "修复无标题笔记在编辑或删除附件后从搜索结果中消失的问题（#751，@sivdead 贡献于 #769）。",
-      "修复桌面端附件无法在系统应用中打开的问题，通过打开本地副本使用外部应用（#768）。",
-      "修复导出时 PDF 页面和空白段落丢失，改善复制到微信的排版及目录卡片自适应显示。"
+      "Web、桌面、Android 和 iOS 支持自愿开启验证器二次验证，提供一次性恢复码。启用时请妥善保存恢复码。（#671；@yulei666，#779）",
+      "可按模型分别设置正文生成、标签建议和内置 AI 侧栏的输出上限。（#652；@yulei666，#780）",
+      "分享笔记和公开笔记本站点新增可折叠大纲，方便跳转到各章节。（@sivdead，#785）",
+      "改善 Web、桌面和 Android 的 Mermaid 图表渲染，修复跨子图连线等问题，并更新示例图表。",
+      "点击空白笔记下方时保留编辑焦点，并简化三级标题的编号样式。",
+      "修复笔记含有无效字符时的图片导出问题，并隔离桌面备份预览。",
+      "自托管实例升级前请备份数据库，并应用截至 0091 的迁移。"
     ],
     "ja": [
-      "デスクトップのローカル Agent に CodeBuddy を追加。インストール済みの公式 CLI を利用できます。",
-      "デスクトップの定期バックアップに、独立したアップロード状況と再試行を備えた WebDAV コピーを追加。",
-      "無題のノートを編集したり添付ファイルを削除したりした後、検索結果から消える問題を修正。",
-      "デスクトップの添付ファイルをローカルコピーとしてシステムのアプリで開けるよう修正。",
-      "エクスポート時に PDF の全ページと空行を保持し、WeChat へのコピー書式と目次カードの表示を改善。"
+      "認証アプリによる二段階認証と使い捨ての復旧コードに対応しました。",
+      "本文生成、タグ候補、AI サイドバーの出力上限をモデルごとに設定できます。",
+      "共有ノートと公開ノートブックに折りたたみ可能な目次を追加しました。",
+      "Mermaid 図の表示、サブグラフ間の接続、サンプル図を改善しました。",
+      "空のノートの下をクリックしたときに編集フォーカスを維持し、レベル3見出しの番号表示を簡素化しました。",
+      "無効な文字を含むノートの画像書き出しを修正し、デスクトップのバックアッププレビューを分離しました。",
+      "セルフホスト環境では、アップグレード前にデータベースをバックアップし、0091 までのマイグレーションを適用してください。"
     ]
   }
 }
