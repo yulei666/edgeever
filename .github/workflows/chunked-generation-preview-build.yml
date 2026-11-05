@@ -1,0 +1,171 @@
+# Fork-only preview builds for issue #652 PR B (long generation in parts). Lives on a CI
+# branch only and must never be merged upstream. Put "[only:ios]" or "[only:android]" in the
+# head commit message to build one job. Builds are unsigned / signed with the fork's
+# throwaway preview key and are for testing only.
+name: Chunked generation preview builds
+
+on:
+  push:
+    branches:
+      - yulei666/chunked-generation-ci
+  workflow_dispatch:
+
+concurrency:
+  group: chunked-generation-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    if: github.repository == 'yulei666/edgeever' && (!contains(github.event.head_commit.message, '[only:') || contains(github.event.head_commit.message, '[only:ios]'))
+    name: iOS build + unit tests (simulator, unsigned)
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: apps/ios
+        run: xcodegen generate
+      - name: Build for simulator
+        working-directory: apps/ios
+        run: |
+          xcodebuild build -project EdgeEver.xcodeproj -scheme EdgeEver \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO
+      - name: Unit tests
+        working-directory: apps/ios
+        run: |
+          DEST="$(xcodebuild -project EdgeEver.xcodeproj -scheme EdgeEver -showdestinations 2>/dev/null \
+            | sed -n 's/.*name:\(iPhone[^,}]*\).*/\1/p' | sed 's/[[:space:]]*$//' | head -1)"
+          echo "Using simulator: ${DEST:=iPhone 16}"
+          xcodebuild test -project EdgeEver.xcodeproj -scheme EdgeEver \
+            -destination "platform=iOS Simulator,name=$DEST" \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO \
+            -only-testing:EdgeEverTests
+      - name: Package simulator app
+        if: always()
+        run: |
+          mkdir -p out
+          sim="$(find "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator" -maxdepth 1 -name '*.app' | head -1)"
+          test -n "$sim" && ditto -c -k --keepParent "$sim" out/EdgeEver-simulator.app.zip
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: edgeever-auto-budget-preview-ios
+          path: out/*
+          if-no-files-found: warn
+          retention-days: 14
+
+  ios-ui:
+    if: github.repository == 'yulei666/edgeever' && (!contains(github.event.head_commit.message, '[only:') || contains(github.event.head_commit.message, '[only:ios-ui]'))
+    name: iOS UI tests (simulator, mock provider)
+    runs-on: macos-15-intel
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Start self-hosted server and mock provider
+        run: |
+          nohup bun scripts/ci/ios-ui-backend.mjs > "$RUNNER_TEMP/ee-ui-backend.out" 2>&1 &
+          for i in $(seq 1 120); do [ -f "$RUNNER_TEMP/ee-ui-backend-ready" ] && break; sleep 1; done
+          test -f "$RUNNER_TEMP/ee-ui-backend-ready" || { tail -50 "$RUNNER_TEMP/ee-ui-backend.out"; exit 1; }
+          curl -fsS http://127.0.0.1:18795/api/health
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: apps/ios
+        run: xcodegen generate
+      - name: UI tests
+        working-directory: apps/ios
+        run: |
+          UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = sorted((r for r in devices if "iOS" in r), reverse=True)
+          print(next(d["udid"] for r in runtimes for d in devices[r] if d["name"].startswith("iPhone")))')"
+          xcrun simctl list devices available | grep "$UDID"
+          xcodebuild test -project EdgeEver.xcodeproj -scheme EdgeEver \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd" CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath "$RUNNER_TEMP/ui.xcresult" \
+            -only-testing:EdgeEverUITests
+      - name: Export screenshots
+        if: always()
+        run: |
+          mkdir -p out/screenshots
+          if [ -d "$RUNNER_TEMP/ui.xcresult" ]; then
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/ui.xcresult" --output-path out/screenshots || true
+            ditto -c -k --keepParent "$RUNNER_TEMP/ui.xcresult" out/ui.xcresult.zip
+          fi
+          cp "$RUNNER_TEMP/ee-ui-backend.log" "$RUNNER_TEMP/ee-ui-backend.out" out/ 2>/dev/null || true
+          ls -R out | head -50
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: edgeever-auto-budget-ios-ui
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+  android:
+    if: github.repository == 'yulei666/edgeever' && (!contains(github.event.head_commit.message, '[only:') || contains(github.event.head_commit.message, 'android'))
+    name: Android arm64 APK (preview key)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install Android build-tools
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;36.0.0" >/dev/null
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck:mobile
+      - name: Restore preview signing key
+        # The fork's fixed preview key (shared with earlier preview builds), so newer preview
+        # APKs install over older ones. Unrelated to the official release key.
+        env:
+          PREVIEW_KEYSTORE_BASE64: ${{ secrets.TOTP_PREVIEW_ANDROID_KEYSTORE_BASE64 }}
+          PREVIEW_KEYSTORE_PASSWORD: ${{ secrets.TOTP_PREVIEW_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          test -n "$PREVIEW_KEYSTORE_BASE64" && test -n "$PREVIEW_KEYSTORE_PASSWORD"
+          printf '%s' "$PREVIEW_KEYSTORE_BASE64" | openssl base64 -d -A > "$RUNNER_TEMP/preview.p12"
+          password="$PREVIEW_KEYSTORE_PASSWORD"
+          digest="$(keytool -exportcert -keystore "$RUNNER_TEMP/preview.p12" -storetype PKCS12 \
+            -storepass "$password" -alias preview | openssl dgst -sha256 -r | cut -d' ' -f1)"
+          echo "Preview signer SHA-256: $digest"
+          {
+            echo "EDGE_EVER_ANDROID_ALLOWED_SIGNER_SHA256=$digest"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/preview.p12"
+            echo "ANDROID_KEYSTORE_PASSWORD=$password"
+            echo "ANDROID_KEY_ALIAS=preview"
+            echo "ANDROID_KEY_PASSWORD=$password"
+          } >> "$GITHUB_ENV"
+      - name: Build APK
+        env:
+          EDGE_EVER_ANDROID_APK_ARCHS: arm64-v8a
+        run: bun run build:android:apk
+      - uses: actions/upload-artifact@v6
+        with:
+          name: edgeever-auto-budget-preview-android-arm64
+          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

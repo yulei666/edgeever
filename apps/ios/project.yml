@@ -115,6 +115,7 @@ targets:
     scheme:
       testTargets:
         - EdgeEverTests
+        - EdgeEverUITests
   ShareExtension:
     type: app-extension
     platform: iOS
@@ -152,3 +153,16 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/EdgeEver.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/EdgeEver"
         BUNDLE_LOADER: "$(TEST_HOST)"
+  # Fork-only CI UI tests for #652 PR A; never merged upstream.
+  EdgeEverUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/EdgeEverUITests
+    dependencies:
+      - target: EdgeEver
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.edgeever.mobile.uitests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: EdgeEver
