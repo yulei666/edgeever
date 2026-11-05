@@ -1,4 +1,4 @@
-import { AI_TARGET_LANGUAGES, getDefaultAiTargetLanguage, type AiTargetLanguage } from "@edgeever/shared";
+import { AI_TARGET_LANGUAGES, type AiTargetLanguage } from "@edgeever/shared";
 import type { AiBodyDraftAction } from "./ai-body-draft-store";
 
 /**
@@ -35,9 +35,10 @@ export const parseAiTargetLanguage = (value: string): AiTargetLanguage | null =>
 
 /**
  * The body command for a sidebar skill, or `null` when the skill stays an Agent turn.
- * `/translate ja` picks the language; other words after a command become the instruction.
+ * `/translate ja` picks the language; without one the sidebar asks which language to use, as the
+ * Agent did. Other words after a command become the instruction.
  */
-export const resolveAiBodyCommand = (skill: string, rest: string, locale: string): AiBodyCommand | null => {
+export const resolveAiBodyCommand = (skill: string, rest: string): AiBodyCommand | null => {
   const words = rest.trim();
   if (skill === "improve") return { action: "improve-writing", ...(words ? { instruction: words } : {}) };
   if (skill !== "translate") return null;
@@ -46,7 +47,37 @@ export const resolveAiBodyCommand = (skill: string, rest: string, locale: string
   const instruction = (named ? others.join(" ") : words).trim();
   return {
     action: "translate",
-    targetLanguage: named ?? getDefaultAiTargetLanguage(locale),
+    ...(named ? { targetLanguage: named } : {}),
     ...(instruction ? { instruction } : {}),
   };
+};
+
+/** A rough guess at the language a text is written in, to leave it out of the choices. */
+export const guessAiSourceLanguage = (text: string): AiTargetLanguage | null => {
+  const sample = text.slice(0, 4000);
+  const count = (pattern: RegExp) => sample.match(pattern)?.length ?? 0;
+  const kana = count(/[぀-ヿ]/g);
+  const hangul = count(/[가-힯]/g);
+  const han = count(/[一-鿿]/g);
+  const latin = count(/[A-Za-z]/g);
+  const total = kana + hangul + han + latin;
+  if (!total) return null;
+  if (kana > total * 0.05) return "ja";
+  if (hangul > total * 0.3) return "ko";
+  if (han > total * 0.3) return "zh-CN";
+  if (latin > total * 0.5) return "en";
+  return null;
+};
+
+const UI_LANGUAGE_TARGETS: Record<string, AiTargetLanguage> = { zh: "zh-CN", en: "en", ja: "ja", pl: "pl" };
+
+/**
+ * Three target languages to offer for a translation (#652 PR B): the default for the UI
+ * language first, then the UI language and common choices, leaving out the source's language.
+ */
+export const suggestAiTargetLanguages = (source: string, locale: string, fallback: AiTargetLanguage): AiTargetLanguage[] => {
+  const sourceLanguage = guessAiSourceLanguage(source);
+  const ui = UI_LANGUAGE_TARGETS[locale.toLowerCase().split("-")[0] ?? ""];
+  const ordered = [fallback, ui, "en", "zh-CN", "ja", "ko"].filter((item): item is AiTargetLanguage => Boolean(item));
+  return [...new Set(ordered)].filter((item) => item !== sourceLanguage).slice(0, 3);
 };

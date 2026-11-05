@@ -22,6 +22,7 @@ import {
   type AiBodyDraftTarget,
   type AiDraftEditorApi,
   type AiDraftSelectionSnapshot,
+  trackAiBodyDraftRun,
 } from "@/lib/ai-body-draft-store";
 
 /** A body draft in the sidebar (#652 PR B). */
@@ -31,6 +32,8 @@ export type AiBodyDraft = Omit<AiBodyDraftRecord, "scope"> & {
   error: string | null;
   /** Restored from this device after a reload, not generated in this session. */
   recovered: boolean;
+  /** A translation without a target language waits for the user to choose one. */
+  awaitingLanguage?: boolean;
 };
 
 export type AiBodyDraftTargetRequest =
@@ -57,6 +60,7 @@ export const useAiBodyDraft = (options: {
   const [draft, setDraft] = useState<AiBodyDraft | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const completionRef = useRef<AiDraftCompletion>(startAiDraftCompletion());
+  const stoppedByUser = useRef(false);
   const draftRef = useRef<AiBodyDraft | null>(null);
   draftRef.current = draft;
 
@@ -70,14 +74,19 @@ export const useAiBodyDraft = (options: {
     void loadAiBodyDraft(scope, memoId).then((record) => {
       if (cancelled || !record || draftRef.current) return;
       const { scope: _scope, ...rest } = record;
-      setDraft({ ...rest, generating: false, progress: null, error: null, recovered: true });
+      setDraft({ ...rest, message: rest.message || rest.source.slice(0, 80), generating: false, progress: null, error: null, recovered: true });
     });
     return () => {
       cancelled = true;
     };
   }, [memoId, scope]);
 
-  useEffect(() => () => controllerRef.current?.abort(), []);
+  useEffect(() => () => {
+    // Leaving (or signing out) ends the run without saving it.
+    const controller = controllerRef.current;
+    controllerRef.current = null;
+    controller?.abort();
+  }, []);
 
   const explain = useCallback((cause: unknown) => {
     if (cause instanceof ApiRequestError && cause.code === "ai_input_too_long") return t("aiAssistant.sidebar.draft.inputTooLong");
@@ -91,7 +100,7 @@ export const useAiBodyDraft = (options: {
     await saveAiBodyDraft({ ...record, scope });
   }, [scope]);
 
-  const start = useCallback(async (command: AiBodyCommand, target: AiBodyDraftTargetRequest, sourceOverride?: string) => {
+  const start = useCallback(async (command: AiBodyCommand, target: AiBodyDraftTargetRequest, message: string, sourceOverride?: string) => {
     if (!memoId || !editor) return;
     controllerRef.current?.abort();
     const source = sourceOverride ?? (target.kind === "note" ? editor.noteMarkdown() : target.snapshot.text);
@@ -99,12 +108,26 @@ export const useAiBodyDraft = (options: {
     const recordTarget: AiBodyDraftTarget = target.kind === "note"
       ? { kind: "note", sourceHash: hashAiDraftSource(source) }
       : { kind: "selection", ...target.snapshot };
+    if (command.action === "translate" && !command.targetLanguage) {
+      // Ask which language first; choosing one starts the translation of the same source.
+      controllerRef.current = null;
+      setDraft({
+        memoId, action: command.action, message, source, text: "", incomplete: null, incompleteParts: [],
+        ...(command.instruction ? { instruction: command.instruction } : {}),
+        target: recordTarget, createdAt: new Date().toISOString(),
+        generating: false, progress: null, error: null, recovered: false, awaitingLanguage: true,
+      });
+      return;
+    }
     const controller = new AbortController();
     controllerRef.current = controller;
+    stoppedByUser.current = false;
+    const untrack = trackAiBodyDraftRun(controller);
     completionRef.current = startAiDraftCompletion();
     const initial: AiBodyDraft = {
       memoId,
       action: command.action,
+      message,
       ...(command.targetLanguage ? { targetLanguage: command.targetLanguage } : {}),
       ...(command.instruction ? { instruction: command.instruction } : {}),
       source,
@@ -157,6 +180,7 @@ export const useAiBodyDraft = (options: {
         error = explain(cause);
       }
     }
+    untrack();
     if (!current()) return;
     controllerRef.current = null;
     const finished: AiBodyDraft = {
@@ -169,12 +193,15 @@ export const useAiBodyDraft = (options: {
       incompleteParts: [...completionRef.current.incompleteParts],
     };
     setDraft(finished);
+    // A run cancelled by signing out is not saved.
+    if (controller.signal.aborted && !stoppedByUser.current) return;
     // Only a draft with text is kept, complete or not; it is cleared once applied or discarded.
     if (text.trim()) await persist(finished);
     else if (scope) await clearAiBodyDraft(scope, memoId);
   }, [editor, explain, i18n.language, memoId, noteTitle, persist, scope]);
 
   const stop = useCallback(() => {
+    stoppedByUser.current = true;
     controllerRef.current?.abort();
   }, []);
 
@@ -185,7 +212,7 @@ export const useAiBodyDraft = (options: {
     if (scope && memoId) await clearAiBodyDraft(scope, memoId);
   }, [memoId, scope]);
 
-  const regenerate = useCallback((targetLanguage?: AiTargetLanguage) => {
+  const regenerate = useCallback((targetLanguage?: AiTargetLanguage, instruction?: string) => {
     const previous = draftRef.current;
     if (!previous) return;
     const target: AiBodyDraftTargetRequest = previous.target.kind === "note"
@@ -194,8 +221,8 @@ export const useAiBodyDraft = (options: {
     void start({
       action: previous.action,
       ...(targetLanguage ?? previous.targetLanguage ? { targetLanguage: targetLanguage ?? previous.targetLanguage } : {}),
-      ...(previous.instruction ? { instruction: previous.instruction } : {}),
-    }, target, previous.target.kind === "selection" ? previous.source : undefined);
+      ...(instruction ?? previous.instruction ? { instruction: instruction ?? previous.instruction } : {}),
+    }, target, previous.message, previous.target.kind === "selection" ? previous.source : undefined);
   }, [start]);
 
   const applied = useCallback(async () => {

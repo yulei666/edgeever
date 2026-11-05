@@ -1880,6 +1880,8 @@ export const zhCN = {
         translate: "翻译当前内容",
       },
       draft: {
+        chooseLanguage: "要把它翻译成哪种语言？",
+        translateInto: "请翻译成{{language}}。",
         title: { translate: "翻译", "improve-writing": "润色" },
         scopeNote: "整篇笔记",
         scopeSelection: "选中内容",
@@ -2673,7 +2675,7 @@ export const zhCN = {
     formActor: "表单提交",
   },
   attachmentOpen: {
-    copyHint: "打开附件副本（外部修改不会同步）",
+    copyHint: "打开附件（保存后自动回存）",
     opening: "正在打开附件…",
     failed: "无法打开附件",
     blocked: "此文件类型不能直接打开，请下载后自行处理。",
@@ -2681,6 +2683,25 @@ export const zhCN = {
     forbidden: "工作区已切换或当前无法执行此操作，请重新打开笔记后重试。",
     openFailed: "系统无法打开此文件，请检查是否已安装并关联相应应用，或下载后自行打开。",
   },
+  attachmentWriteback: {
+    title: "附件回存",
+    description: "在原路径保存后自动回存；未回存的修改会保留在本机。",
+    watching: "已就绪，保存后自动回存",
+    pending: "已保存到本机，等待回存",
+    saving: "正在回存…",
+    saved: "已回存原附件",
+    conflict: "原附件已更新，本地修改已保留，两份内容均未被覆盖。",
+    error: "尚未回存，修改已保留在本机。",
+    deleted: "原附件已不存在或无法访问，本地修改已保留。",
+    tooLarge: "尚未回存：内容替换限 100 MiB，本地修改已保留。",
+    serverUpdateRequired: "尚未回存：请升级服务端以启用安全回存，本地修改已保留。",
+    unavailable: "无法读取附件回存状态",
+    needsAttention: "{{count}} 个附件未回存",
+    pendingCount: "{{count}} 个附件等待回存",
+    retry: "重试回存",
+    reveal: "显示本地文件",
+  },
+
   pdfViewer: {
     loading: "正在加载 PDF…",
     unavailable: "无法预览此 PDF，你仍可下载或在外部打开。",
