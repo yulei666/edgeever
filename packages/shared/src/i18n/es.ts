@@ -281,6 +281,8 @@ export const es = {
     "historyFailed": "Esta revisión no se completó",
     "historyUndone": "Esta revisión se deshizo",
     "doubleClickText": "Haz doble clic en el texto del gráfico para editarlo. Los cambios se guardan automáticamente.",
+    "editWithAi": "Editar con el chat de IA",
+    "aiEditHint": "Pide al asistente de IA que cambie el contenido, los colores o el diseño.",
     "structureSettings": "Estructura y estilo · Edición por lotes",
     "editSyntax": "Editar sintaxis de origen",
     "backToStructure": "Volver a estructura y estilo",
@@ -1229,6 +1231,11 @@ export const es = {
       "fallback": "Guardar en EdgeEver",
       "cancel": "Cancelar",
       "imgbed": {
+        "browserDescription": "La aplicación web se conecta directamente a ImgBed. Use HTTPS y permita CORS para este sitio EdgeEver, incluido el encabezado Authorization. Para servidores locales o privados se recomienda la aplicación de escritorio.",
+        "browserTokenDescription": "Cree un token con permiso upload en ImgBed. Se guarda solo en este navegador, no se sincroniza con otros dispositivos y se envía directamente a ImgBed al subir imágenes.",
+        "browserAddress": "Introduzca una dirección HTTPS de ImgBed válida sin credenciales, parámetros de consulta ni fragmento.",
+        "browserNetwork": "No se pudo leer la respuesta de ImgBed. Revise la red, el certificado HTTPS y CORS (permita este sitio y Authorization). La imagen de prueba podría haberse subido; repetir la prueba puede crear duplicados.",
+        "browserUploadFailed": "Revise la dirección, el token, la red y CORS de ImgBed. La imagen podría haberse subido sin que el navegador pudiera leer el resultado. Reintentar puede crear duplicados. También puede guardar en EdgeEver o cancelar.",
         "option": "CloudFlare ImgBed",
         "description": "Sube las imágenes nuevas directamente a tu CloudFlare ImgBed autoalojado e inserta el enlace de la imagen obtenido en la nota.",
         "endpoint": "Dirección de ImgBed",
@@ -1321,7 +1328,7 @@ export const es = {
     "markdownThemeTitle": "Tema del código fuente Markdown",
     "markdownThemeDescription": "Sigue la apariencia de la app o elige un tema fijo de resaltado de sintaxis para la edición de código fuente Markdown.",
     "editorThemeTitle": "Tema del editor",
-    "editorThemeDescription": "Elige un estilo de escritura para el editor de notas. Se guarda en este navegador. Copiar a WeChat usa el mismo estilo.",
+    "editorThemeDescription": "Elige un estilo de escritura para el editor de notas. Se guarda en este navegador. Copiar como texto enriquecido usa el mismo estilo.",
     "editorContentAlignmentTitle": "Disposición del contenido de la nota",
     "editorContentAlignments": {
       "center": "Optimizar legibilidad (centrado)",
@@ -1353,6 +1360,7 @@ export const es = {
       "azure": "Azul real",
       "violet": "Púrpura iris",
       "pink": "Rosa suave",
+      "rose": "Rojo rosa",
       "slate": "Gris malva"
     },
     "editorBodyHeadingStyleTitle": "Estilo de encabezados",
@@ -1504,6 +1512,7 @@ export const es = {
     }
   },
   "plugins": {
+    secureFeaturesUnavailable: "La instalación y la verificación de integridad están disponibles. Los ajustes secretos cifrados y los catálogos comunitarios firmados requieren HTTPS o localhost.",
     "title": "Plugins y temas",
     "developerDocs": "Desarrollo de plugins",
     "manifestUrl": "URL del manifiesto de la extensión",
@@ -1511,6 +1520,7 @@ export const es = {
     "installSource": "Repositorio de GitHub o URL del manifiesto",
     "sourcePlaceholder": "https://github.com/owner/edgeever-plugin",
     "install": "Instalar",
+    restoreFailed: "No se pudieron restaurar algunos complementos o temas. Revisa los errores e inténtalo de nuevo.",
     "installing": "Instalando…",
     "empty": "Este espacio de trabajo aún no tiene plugins ni temas instalados.",
     "syncDescription": "La lista de instalación sigue a este espacio de trabajo en la web y en escritorio. Los ajustes y secretos se mantienen en este dispositivo.",
@@ -3266,6 +3276,7 @@ export const es = {
     "clipboardReadFailed": "No se pudo leer el portapapeles. Comprueba que tu navegador permite el acceso al portapapeles.",
     "characterCount": "{{count}} caracteres",
     "copyToWeChat": "Copiar como texto enriquecido",
+    "copyToWeChatTooltip": "Conserva el formato y las imágenes para pegarlos directamente en WeChat, Substack, Medium, blogs y otros editores",
     "phonePreview": "Vista previa móvil",
     "showPhonePreview": "Mostrar vista previa móvil",
     "hidePhonePreview": "Ocultar vista previa móvil",
@@ -3273,7 +3284,11 @@ export const es = {
     "phonePreviewFollow": "Seguir desplazamiento",
     "copyingToWeChat": "Copiando al portapapeles, espera por favor…",
     "copiedToWeChat": "Copiado",
+    "copiedToWeChatNotice": "Copiado con formato: listo para pegar en editores de artículos y blogs",
     "copyToWeChatFailed": "Error al copiar",
+    "publishImageAddressFailed": "El alojamiento de imágenes debe ser accesible desde Internet. Las plataformas de publicación no pueden leer direcciones locales o privadas.",
+    "publishImageUploadFailed": "No se pudo cargar o subir la imagen. Comprueba la imagen y su alojamiento y vuelve a copiar.",
+    "publishImageRenderFailed": "No se pudo renderizar el diagrama. Comprueba el código Mermaid y vuelve a copiar.",
     "outline": "Esquema",
     "showOutline": "Mostrar esquema",
     "hideOutline": "Ocultar esquema",
@@ -3688,6 +3703,10 @@ export const es = {
     "description": "Migra notas desde plataformas de terceros con la importación por lotes recomendada mediante MCP y agentes de IA."
   },
   "session": {
+    currentInstance: "URL de la instancia",
+    signOutDescription: "Después de cerrar sesión, puedes cambiar de cuenta o conectarte a una nueva dirección de instancia.",
+    webSignOutDescription: "Después de cerrar sesión, volverás a la página de inicio de sesión de esta instancia.",
+    logoutFailed: "No se pudo completar el cierre de sesión. Inténtalo de nuevo.",
     "loggingOut": "Cerrando sesión...",
     "logout": "Cerrar sesión"
   },
@@ -4018,6 +4037,7 @@ export const es = {
     "refreshNow": "Recargar ahora",
     "closeNotice": "Cerrar aviso de actualización",
     "sidebarDownloads": "Descargar clientes",
+    clientsAndExtensions: "Clientes y extensiones del navegador",
     "sidebarDownloadsTitle": "Descargar clientes y extensiones de navegador de EdgeEver",
     "sidebarGroupApps": "Apps y clientes",
     "sidebarGroupClippers": "Web Clipper para el navegador",

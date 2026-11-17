@@ -281,6 +281,8 @@ export const fr = {
     historyFailed: "Cette révision n'a pas pu être effectuée",
     historyUndone: "Cette révision a été annulée",
     doubleClickText: "Double-cliquez sur le texte dans le graphique pour le modifier. Enregistrement automatique.",
+    editWithAi: "Modifier avec le chat IA",
+    aiEditHint: "Demandez à l’assistant IA de modifier le contenu, les couleurs ou la mise en page.",
     structureSettings: "Structure et style · Modification groupée",
     editSyntax: "Modifier la syntaxe source",
     backToStructure: "Retour à la structure et au style",
@@ -1229,6 +1231,11 @@ export const fr = {
       fallback: "Enregistrer dans EdgeEver",
       cancel: "Annuler",
       imgbed: {
+        "browserDescription": "L’application web se connecte directement à ImgBed. Utilisez HTTPS et autorisez CORS pour ce site EdgeEver, y compris l’en-tête Authorization. Pour un serveur local ou privé, préférez l’application de bureau.",
+        "browserTokenDescription": "Créez un jeton avec la permission upload dans ImgBed. Il reste dans ce navigateur, sans synchronisation entre appareils, et est envoyé directement à ImgBed lors des téléversements.",
+        "browserAddress": "Saisissez une adresse HTTPS ImgBed valide sans identifiants, paramètres de requête ni fragment.",
+        "browserNetwork": "Impossible de lire la réponse ImgBed. Vérifiez le réseau, le certificat HTTPS et CORS (ce site et l’en-tête Authorization). L’image de test est peut-être déjà téléversée ; un nouveau test peut créer un doublon.",
+        "browserUploadFailed": "Vérifiez l’adresse, le jeton, le réseau et CORS dans ImgBed. L’image est peut-être déjà téléversée, mais le résultat est illisible dans le navigateur. Réessayer peut créer un doublon. Vous pouvez aussi enregistrer dans EdgeEver ou annuler.",
         option: "CloudFlare ImgBed",
         description: "Téléversez les nouvelles images directement vers votre CloudFlare ImgBed auto-hébergé et insérez le lien retourné dans la note.",
         endpoint: "Adresse d'ImgBed",
@@ -1321,7 +1328,7 @@ export const fr = {
     markdownThemeTitle: "Thème du code source Markdown",
     markdownThemeDescription: "Suivre l'apparence de l'application ou choisir un thème fixe de coloration syntaxique pour l'édition de la source Markdown.",
     editorThemeTitle: "Thème de l'éditeur",
-    editorThemeDescription: "Choisissez un style d'écriture pour l'éditeur de notes. Enregistré dans ce navigateur. La copie vers WeChat utilise le même style.",
+    editorThemeDescription: "Choisissez un style d'écriture pour l'éditeur de notes. Enregistré dans ce navigateur. Copier en texte enrichi utilise le même style.",
     editorContentAlignmentTitle: "Mise en page du contenu de la note",
     editorContentAlignments: {
       center: "Optimiser la lisibilité (centré)",
@@ -1353,6 +1360,7 @@ export const fr = {
       azure: "Bleu roi",
       violet: "Pourpre iris",
       pink: "Rose tendre",
+      rose: "Rouge framboise",
       slate: "Gris mauve"
     },
     editorBodyHeadingStyleTitle: "Style des titres",
@@ -1504,6 +1512,7 @@ export const fr = {
     }
   },
   plugins: {
+    secureFeaturesUnavailable: "L’installation et la vérification d’intégrité sont disponibles. Les paramètres secrets chiffrés et les catalogues communautaires signés nécessitent HTTPS ou localhost.",
     title: "Plugins et thèmes",
     developerDocs: "Développement de plugins",
     manifestUrl: "URL du manifeste de l'extension",
@@ -1511,6 +1520,7 @@ export const fr = {
     installSource: "Dépôt GitHub ou URL du manifeste",
     sourcePlaceholder: "https://github.com/owner/edgeever-plugin",
     install: "Installer",
+    restoreFailed: "Certains plugins ou thèmes n’ont pas pu être restaurés. Consultez les erreurs ci-dessous et réessayez.",
     installing: "Installation en cours…",
     empty: "Cet espace de travail n'a encore aucun plugin ni thème installé.",
     syncDescription: "La liste d'installation suit cet espace de travail sur le Web et l'ordinateur. Les paramètres et les secrets restent sur cet appareil.",
@@ -3266,6 +3276,7 @@ export const fr = {
     clipboardReadFailed: "Impossible de lire le presse-papiers. Vérifiez que votre navigateur autorise l'accès au presse-papiers.",
     characterCount: "{{count}} caractères",
     copyToWeChat: "Copier en texte enrichi",
+    copyToWeChatTooltip: "Conserve la mise en forme et les images pour les coller directement dans WeChat, Substack, Medium, des blogs et d'autres éditeurs",
     phonePreview: "Aperçu mobile",
     showPhonePreview: "Afficher l'aperçu mobile",
     hidePhonePreview: "Masquer l'aperçu mobile",
@@ -3273,7 +3284,11 @@ export const fr = {
     phonePreviewFollow: "Suivre le défilement",
     copyingToWeChat: "Copie dans le presse-papiers, veuillez patienter…",
     copiedToWeChat: "Copié",
+    copiedToWeChatNotice: "Copié avec mise en forme — prêt à coller dans vos éditeurs d'articles et de blogs",
     copyToWeChatFailed: "Échec de la copie",
+    "publishImageAddressFailed": "Le service d’images doit être accessible depuis Internet. Les plateformes de publication ne peuvent pas lire les adresses locales ou privées.",
+    "publishImageUploadFailed": "Échec de la lecture ou du téléversement de l’image. Vérifiez l’image et le service d’images, puis réessayez la copie.",
+    "publishImageRenderFailed": "Échec du rendu du diagramme. Vérifiez le code Mermaid et réessayez la copie.",
     outline: "Plan",
     showOutline: "Afficher le plan",
     hideOutline: "Masquer le plan",
@@ -3688,6 +3703,10 @@ export const fr = {
     description: "Migrez vos notes depuis des plateformes tierces grâce à l'importation par lot recommandée avec MCP et des agents IA."
   },
   session: {
+    currentInstance: "URL de l'instance",
+    signOutDescription: "Après la déconnexion, vous pouvez changer de compte ou vous connecter à une nouvelle adresse d’instance.",
+    webSignOutDescription: "Après la déconnexion, vous reviendrez à la page de connexion de cette instance.",
+    logoutFailed: "Impossible de terminer la déconnexion. Veuillez réessayer.",
     loggingOut: "Déconnexion en cours...",
     logout: "Se déconnecter"
   },
@@ -4018,6 +4037,7 @@ export const fr = {
     refreshNow: "Actualiser maintenant",
     closeNotice: "Fermer l'avis de mise à jour",
     sidebarDownloads: "Télécharger les applications",
+    clientsAndExtensions: "Applications et extensions de navigateur",
     sidebarDownloadsTitle: "Télécharger les applications EdgeEver et les extensions pour navigateur",
     sidebarGroupApps: "Applications & clients",
     sidebarGroupClippers: "Web Clipper pour navigateur",

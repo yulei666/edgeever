@@ -1,10 +1,6 @@
 import { useRef, useState, type DragEvent } from "react";
-import { CheckCircle2, ExternalLink, FileUp, Folder, LoaderCircle, TriangleAlert, Upload } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileUp, Folder, Info, LoaderCircle, TriangleAlert, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import flomoLogo from "@/assets/import-logos/flomo.png?url";
-import evernoteLogo from "@/assets/import-logos/evernote.svg?url";
-import joplinLogo from "@/assets/import-logos/joplin.svg?url";
-import obsidianLogo from "@/assets/import-logos/obsidian.svg?url";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,28 +10,11 @@ import type { Notebook } from "@edgeever/shared";
 import type { ImportFile, ImportFormat, ImportIssue } from "@edgeever/shared/note-import/types";
 import type { NoteImportController, NoteImportSnapshot } from "@/lib/note-import/controller";
 import { EVERNOTE_MIGRATION_BLOG_URL } from "@/lib/routes";
-
-const importSources = {
-  flomo: { label: "flomo", logo: flomoLogo, formatHint: "HTML · .zip" },
-  evernote: {
-    label: "Evernote / 印象笔记",
-    logo: evernoteLogo,
-    formatHint: ".enex · .zip",
-  },
-  obsidian: {
-    label: "Obsidian",
-    logo: obsidianLogo,
-    formatHint: "Vault 目录 · .zip",
-  },
-  joplin: {
-    label: "Joplin",
-    logo: joplinLogo,
-    formatHint: ".jex · RAW · .zip",
-  },
-} satisfies Record<ImportFormat, { label: string; logo: string | undefined; formatHint: string }>;
+import { getImportSources } from "./import-sources";
 
 export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { controller: NoteImportController; state: NoteImportSnapshot; onOpenMemo: (memoId: string, notebookId: string) => void }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const importSources = getImportSources(i18n.resolvedLanguage);
   const files = useRef<HTMLInputElement>(null);
   const directory = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -177,6 +156,24 @@ export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { cont
     controller.hide();
     onOpenMemo(memoId, notebookId);
   };
+  const formatHintNotice =
+    state.format === "notion" || state.format === "siyuan" || state.format === "flomo"
+      ? t(`noteImport.${state.format}Hint`)
+      : null;
+  const obsidianAttachmentOption = state.format === "obsidian" ? (
+    <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+      <div className="space-y-1">
+        <label htmlFor="import-unreferenced-attachments" className="text-xs font-medium">{t("noteImport.unreferencedAttachments")}</label>
+        <p className="text-xs text-muted-foreground">{t("noteImport.unreferencedAttachmentsHint")}</p>
+      </div>
+      <Switch
+        id="import-unreferenced-attachments"
+        checked={state.includeUnreferencedAttachments}
+        disabled={busy}
+        onCheckedChange={controller.setIncludeUnreferencedAttachments}
+      />
+    </div>
+  ) : null;
 
   return (
     <Dialog
@@ -186,24 +183,14 @@ export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { cont
       }}
     >
       <DialogContent className="flex max-h-[90dvh] flex-col gap-5 overflow-hidden sm:max-w-xl">
-        <DialogHeader className="space-y-2">
+        <DialogHeader>
           <DialogTitle className="px-8 text-lg font-semibold tracking-tight sm:pl-0">{t("noteImport.title")}</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-normal">
+          <DialogDescription className="sr-only">
             {t("noteImport.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 space-y-5 overflow-y-auto pr-1">
-          {state.format === "obsidian" && ["idle", "scanning", "ready"].includes(state.phase) ? (
-            <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
-              <div className="space-y-1">
-                <label htmlFor="import-unreferenced-attachments" className="text-xs font-medium">{t("noteImport.unreferencedAttachments")}</label>
-                <p className="text-xs text-muted-foreground">{t("noteImport.unreferencedAttachmentsHint")}</p>
-              </div>
-              <Switch id="import-unreferenced-attachments" checked={state.includeUnreferencedAttachments} disabled={busy} onCheckedChange={controller.setIncludeUnreferencedAttachments} />
-            </div>
-          ) : null}
-          {state.format === "flomo" && <p className="text-xs text-muted-foreground">{t("noteImport.flomoHint")}</p>}
           {state.phase === "idle" ? (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -245,6 +232,14 @@ export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { cont
                   })}
                 </ToggleGroup>
               </div>
+
+              {obsidianAttachmentOption}
+              {formatHintNotice ? (
+                <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                  <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                  <span>{formatHintNotice}</span>
+                </div>
+              ) : null}
 
               {/* Dropzone Container */}
               <div
@@ -294,11 +289,7 @@ export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { cont
                 <div className="mt-3.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <span>{t("noteImport.supportedFormats")}</span>
                   <span className="font-mono rounded border border-border/50 bg-background/80 px-1.5 py-0.5 text-foreground/80">
-                    {state.format === "evernote"
-                      ? ".enex · .zip"
-                      : state.format === "flomo" ? "HTML · .zip" : state.format === "obsidian"
-                        ? "Vault · .zip"
-                        : ".jex · RAW · .zip"}
+                    {importSources[state.format].formatHint}
                   </span>
                 </div>
               </div>
@@ -311,7 +302,7 @@ export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { cont
             multiple
             className="hidden"
             data-testid="note-import-files"
-            accept={state.format === "flomo" ? ".html,.htm,.zip" : state.format === "evernote" ? ".enex,.zip,.notes" : state.format === "joplin" ? ".zip,.jex" : ".zip"}
+            accept={state.format === "notion" ? ".md,.markdown,.csv,.zip" : state.format === "siyuan" ? ".md,.markdown,.zip" : state.format === "flomo" ? ".html,.htm,.zip" : state.format === "evernote" ? ".enex,.zip,.notes" : state.format === "joplin" ? ".zip,.jex" : ".zip"}
             onChange={event => selectFiles(event.currentTarget, false)}
           />
           <input
@@ -333,6 +324,8 @@ export const ThirdPartyImportDialog = ({ controller, state, onOpenMemo }: { cont
               </p>
             </div>
           ) : null}
+
+          {state.phase === "scanning" || state.phase === "ready" ? obsidianAttachmentOption : null}
 
           {summary ? (
             <dl className="grid grid-cols-3 gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 text-center">

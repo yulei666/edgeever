@@ -1,26 +1,20 @@
 {
-  "version": "2.26.0",
+  "version": "2.28.2",
   "changes": {
     "en-US": [
-      "Import official flomo HTML ZIP exports with content, tags, timestamps and attachments through the unified import flow. Thanks @sivdead (#834; related to #794).",
-      "Create notes for standalone Obsidian attachments by default, simplify import notices and prioritize errors that block import.",
-      "Restore sharing for visual notes and display shared infographics correctly.",
-      "Unify interface and note font selectors, and simplify the feedback entry across clients.",
-      "Refresh product previews, improve website navigation and image previews, and update contact pages. The public Demo now redirects HTTP to HTTPS."
+      "Restore desktop PDF export from note menus.",
+      "Allow desktop sign-out when the instance is offline, and clarify the current instance and sign-in switching instructions.",
+      "Fix dark appearance in infographic galleries, canvases, and poster workspaces, improve editing control visibility, and unify solid button colors."
     ],
     "zh-CN": [
-      "支持通过统一导入流程导入 flomo 官方 HTML ZIP 导出，保留正文、标签、时间和附件。感谢 @sivdead（#834，关联 #794）。",
-      "默认将 Obsidian 独立附件导入为笔记，精简常规导入提示并优先显示阻断错误。",
-      "恢复可视化笔记的分享入口，并正确展示分享的信息图。",
-      "统一界面与笔记的字体选择体验，并精简各客户端的问题反馈入口。",
-      "更新产品预览，改进官网导航、图片预览与联系页面；公开 Demo 的 HTTP 访问自动跳转到 HTTPS。"
+      "修复桌面端从笔记菜单导出 PDF 失败的问题。",
+      "修复实例离线时桌面端无法退出登录的问题，明确显示当前实例及切换登录方式。",
+      "修复信息图图库、画布和海报工作区的深色模式显示，改善编辑控件可见性并统一实心按钮配色。"
     ],
     "ja": [
-      "flomo の公式 HTML ZIP エクスポートから本文、タグ、日時、添付ファイルを統合インポートできます。",
-      "Obsidian の独立した添付ファイルを既定でノートに取り込み、インポートの通知とエラー表示を改善しました。",
-      "ビジュアルノートの共有を復元し、共有されたインフォグラフィックを正しく表示します。",
-      "画面とノートのフォント選択を統一し、各クライアントのフィードバック導線を簡素化しました。",
-      "製品プレビュー、公式サイトのナビゲーション、画像プレビュー、お問い合わせページを改善し、公開デモを HTTPS にリダイレクトします。"
+      "デスクトップ版のノートメニューから PDF を書き出せない問題を修正しました。",
+      "インスタンスがオフラインでもデスクトップ版からサインアウトできるようにし、現在のインスタンスと接続先の切り替え手順を明確にしました。",
+      "インフォグラフィックのギャラリーとキャンバス、ポスター編集画面のダーク表示を修正し、編集操作を見つけやすくしてボタンの配色を統一しました。"
     ]
   }
 }

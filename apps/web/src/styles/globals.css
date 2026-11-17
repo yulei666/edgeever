@@ -143,6 +143,17 @@
   outline-offset: 2px;
 }
 
+.edgeever-infographic-text-editable foreignObject:is([data-element-type="title"], [data-element-type="desc"], [data-element-type="item-label"], [data-element-type="item-desc"]) {
+  cursor: text;
+}
+
+@media (hover: hover) {
+  .edgeever-infographic-text-editable foreignObject:is([data-element-type="title"], [data-element-type="desc"], [data-element-type="item-label"], [data-element-type="item-desc"]):hover:not(.edgeever-infographic-selected-text) {
+    outline: 1px dashed #94a3b8;
+    outline-offset: 2px;
+  }
+}
+
 .edgeever-infographic-preview > svg {
   display: block;
   width: min(100%, 760px);
@@ -2341,8 +2352,6 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 
 .ProseMirror .edgeever-image-gallery__toolbar {
   position: absolute;
-  bottom: 100%;
-  inset-inline-start: 0;
   z-index: 10;
   visibility: hidden;
   pointer-events: none;
@@ -2350,7 +2359,6 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   flex-wrap: wrap;
   width: fit-content;
   max-width: 100%;
-  margin-bottom: 0.5rem;
   align-items: center;
   gap: 0.25rem;
   border: 1px solid hsl(var(--border));
@@ -2367,6 +2375,11 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   inset-inline: 0;
   top: 100%;
   height: 0.5rem;
+}
+
+.ProseMirror .edgeever-image-gallery__toolbar[data-placement^="bottom"]::after {
+  top: auto;
+  bottom: 100%;
 }
 
 .ProseMirror .edgeever-image-gallery:hover > .edgeever-image-gallery__toolbar,

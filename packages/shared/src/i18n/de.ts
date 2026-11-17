@@ -281,6 +281,8 @@ export const de = {
     "historyFailed": "Diese Überarbeitung wurde nicht abgeschlossen",
     "historyUndone": "Diese Überarbeitung wurde rückgängig gemacht",
     "doubleClickText": "Doppelklicke auf Text in der Grafik, um ihn zu bearbeiten. Änderungen werden automatisch gespeichert.",
+    "editWithAi": "Im KI-Chat bearbeiten",
+    "aiEditHint": "Bitte den KI-Assistenten, Inhalte, Farben oder Layout zu ändern.",
     "structureSettings": "Struktur und Stil · Stapelbearbeitung",
     "editSyntax": "Quellsyntax bearbeiten",
     "backToStructure": "Zurück zu Struktur und Stil",
@@ -1229,6 +1231,11 @@ export const de = {
       "fallback": "In EdgeEver speichern",
       "cancel": "Abbrechen",
       "imgbed": {
+        "browserDescription": "Die Web-App verbindet sich direkt mit ImgBed. Verwenden Sie HTTPS und erlauben Sie CORS für diese EdgeEver-Website einschließlich des Authorization-Headers. Für lokale oder private Server wird die Desktop-App empfohlen.",
+        "browserTokenDescription": "Erstellen Sie in ImgBed ein Token mit upload-Berechtigung. Es bleibt in diesem Browser, wird nicht mit anderen Geräten synchronisiert und beim Upload direkt an ImgBed gesendet.",
+        "browserAddress": "Geben Sie eine gültige HTTPS-ImgBed-Adresse ohne Zugangsdaten, Abfrageparameter oder Fragment ein.",
+        "browserNetwork": "Die ImgBed-Antwort konnte nicht gelesen werden. Prüfen Sie Netzwerk, HTTPS-Zertifikat und CORS (diese Website und Authorization-Header erlauben). Das Testbild wurde möglicherweise bereits hochgeladen; ein weiterer Test kann Duplikate erzeugen.",
+        "browserUploadFailed": "Prüfen Sie Adresse, Token, Netzwerk und ImgBed-CORS. Das Bild wurde möglicherweise hochgeladen, aber der Browser konnte das Ergebnis nicht lesen. Ein erneuter Versuch kann Duplikate erzeugen. Sie können auch in EdgeEver speichern oder abbrechen.",
         "option": "CloudFlare ImgBed",
         "description": "Neue Bilder direkt in Ihr selbst gehostetes CloudFlare ImgBed hochladen und den zurückgegebenen Bildlink in die Notiz einfügen.",
         "endpoint": "ImgBed-Adresse",
@@ -1321,7 +1328,7 @@ export const de = {
     "markdownThemeTitle": "Markdown-Quelltext-Design",
     "markdownThemeDescription": "Dem Erscheinungsbild der App folgen oder ein festes Syntax-Highlighting-Design für die Markdown-Quelltextbearbeitung wählen.",
     "editorThemeTitle": "Editor-Design",
-    "editorThemeDescription": "Wählen Sie einen Schreibstil für den Notiz-Editor. Wird in diesem Browser gespeichert. „Für WeChat kopieren“ verwendet denselben Stil.",
+    "editorThemeDescription": "Wählen Sie einen Schreibstil für den Notiz-Editor. Wird in diesem Browser gespeichert. „Als Rich Text kopieren“ verwendet denselben Stil.",
     "editorContentAlignmentTitle": "Layout des Notizinhalts",
     "editorContentAlignments": {
       "center": "Lesbarkeit optimieren (zentriert)",
@@ -1353,6 +1360,7 @@ export const de = {
       "azure": "Königsblau",
       "violet": "Irisviolett",
       "pink": "Rosarot",
+      "rose": "Rosenrot",
       "slate": "Mauvegrau"
     },
     "editorBodyHeadingStyleTitle": "Überschriftenstil",
@@ -1504,6 +1512,7 @@ export const de = {
     }
   },
   "plugins": {
+    secureFeaturesUnavailable: "Plugin-Installation und Integritätsprüfung sind verfügbar. Verschlüsselte geheime Einstellungen und signierte Community-Kataloge erfordern HTTPS oder localhost.",
     "title": "Plugins und Designs",
     "developerDocs": "Plugin-Entwicklung",
     "manifestUrl": "Manifest-URL der Erweiterung",
@@ -1511,6 +1520,7 @@ export const de = {
     "installSource": "GitHub-Repository oder Manifest-URL",
     "sourcePlaceholder": "https://github.com/owner/edgeever-plugin",
     "install": "Installieren",
+    restoreFailed: "Einige Plugins oder Designs konnten nicht wiederhergestellt werden. Prüfe die folgenden Fehler und versuche es erneut.",
     "installing": "Wird installiert…",
     "empty": "In diesem Arbeitsbereich sind noch keine Plugins oder Designs installiert.",
     "syncDescription": "Die Installationsliste folgt diesem Arbeitsbereich im Web und auf dem Desktop. Einstellungen und Geheimnisse verbleiben auf diesem Gerät.",
@@ -3266,6 +3276,7 @@ export const de = {
     "clipboardReadFailed": "Die Zwischenablage konnte nicht gelesen werden. Überprüfen Sie, ob Ihr Browser den Zugriff auf die Zwischenablage erlaubt.",
     "characterCount": "{{count}} Zeichen",
     "copyToWeChat": "Als Rich Text kopieren",
+    "copyToWeChatTooltip": "Behält Formatierung und Bilder bei, um sie direkt in WeChat, Substack, Medium, Blogs und andere Editoren einzufügen",
     "phonePreview": "Smartphone-Vorschau",
     "showPhonePreview": "Smartphone-Vorschau anzeigen",
     "hidePhonePreview": "Smartphone-Vorschau ausblenden",
@@ -3273,7 +3284,11 @@ export const de = {
     "phonePreviewFollow": "Scrollen folgen",
     "copyingToWeChat": "Wird in Zwischenablage kopiert, bitte warten…",
     "copiedToWeChat": "Kopiert",
+    "copiedToWeChatNotice": "Formatierten Inhalt kopiert — bereit zum Einfügen in Artikel- und Blog-Editoren",
     "copyToWeChatFailed": "Kopieren fehlgeschlagen",
+    "publishImageAddressFailed": "Der Bilderdienst muss aus dem Internet erreichbar sein. Veröffentlichungsplattformen können lokale oder private Adressen nicht abrufen.",
+    "publishImageUploadFailed": "Das Bild konnte nicht geladen oder hochgeladen werden. Prüfe das Bild und den Bilderdienst und kopiere erneut.",
+    "publishImageRenderFailed": "Das Diagramm konnte nicht gerendert werden. Prüfe den Mermaid-Code und kopiere erneut.",
     "outline": "Gliederung",
     "showOutline": "Gliederung anzeigen",
     "hideOutline": "Gliederung ausblenden",
@@ -3688,6 +3703,10 @@ export const de = {
     "description": "Notizen von Drittanbieter-Plattformen mit empfohlenem MCP und KI-Agent-Batch-Import migrieren."
   },
   "session": {
+    currentInstance: "Instanz-URL",
+    signOutDescription: "Nach dem Abmelden kannst du das Konto wechseln oder dich mit einer neuen Instanz-URL verbinden.",
+    webSignOutDescription: "Nach dem Abmelden kehrst du zur Anmeldeseite dieser Instanz zurück.",
+    logoutFailed: "Die Abmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
     "loggingOut": "Abmelden...",
     "logout": "Abmelden"
   },
@@ -4018,6 +4037,7 @@ export const de = {
     "refreshNow": "Jetzt aktualisieren",
     "closeNotice": "Update-Hinweis schließen",
     "sidebarDownloads": "Clients herunterladen",
+    clientsAndExtensions: "Apps und Browser-Erweiterungen",
     "sidebarDownloadsTitle": "EdgeEver-Clients und Browser-Erweiterungen herunterladen",
     "sidebarGroupApps": "Apps & Clients",
     "sidebarGroupClippers": "Browser Web Clipper",

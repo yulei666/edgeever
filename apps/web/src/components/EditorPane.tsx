@@ -31,6 +31,7 @@ import {
   Copy,
   AppWindow,
   CopyPlus,
+  ClipboardType,
   Lock,
   LockOpen,
 } from "lucide-react";
@@ -81,13 +82,14 @@ import {
   createResourceUploadPlaceholder,
   getImageUploadPlaceholderPosition,
   removeImageUploadPlaceholder,
-  waitForImageSourceReady,
   updateImageUploadPlaceholder,
 } from "./editor/image-upload-placeholder";
+import { registerImageUploadPreview, pruneImageUploadPreviews } from "./editor/image-upload-preview";
 import {
   clampResourceInsertionTarget,
   clearNodeSelectionAtDocumentEnd,
   getResourceInsertionTarget,
+  mapResourceInsertionTarget,
   shouldSelectInsertedResources,
 } from "@/lib/resource-insertion-target";
 import { insertUploadedResources } from "@/lib/resource-insertion";
@@ -100,7 +102,6 @@ import {
   createNoteLinkSuggestionExtension,
   type NoteLinkSuggestionLabels,
 } from "./editor/NoteLinkSuggestion";
-import { WeChatIcon } from "./WeChatIcon";
 import { useMarkdownTheme } from "./ThemeProvider";
 const MarkdownSourceEditor = lazy(() =>
   import("./editor/MarkdownSourceEditor").then((module) => ({
@@ -126,6 +127,7 @@ import { AiSidebarErrorBoundary } from "./ai-sidebar/AiSidebarErrorBoundary";
 import { api } from "@/lib/api";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { contentReferencesStagedResourceUrl, findMatchingMemoResource, repairMemoStagedResourceUrls, repairTiptapStagedResourceUrls } from "@/lib/staged-resource-repair";
+import { noteCoverTagCssVariables } from "@/lib/note-cover-tags";
 import { cn, parseTagsText } from "@/lib/utils";
 import {
   EDITOR_ARTICLE_ROW_GAP_PX,
@@ -281,6 +283,7 @@ import { classifyEditorSaveFailure, shouldLeaveEditorAfterSaveError } from "./ed
 import { useEditorSaveConflictActions } from "./editor/useEditorSaveConflictActions";
 import { useEditorNoteSearchController } from "./editor/useEditorNoteSearchController";
 import { EditorNoteLinkPicker } from "./editor/EditorNoteLinkPicker";
+import { useBrowserImgBedFailure } from "./editor/useBrowserImgBedFailure";
 import { EditorResourceDialogs } from "./editor/EditorResourceDialogs";
 import { EditorNoteSearchBar } from "./editor/EditorNoteSearchBar";
 import { EditorSaveRecoveryBanner } from "./editor/EditorSaveRecoveryBanner";
@@ -319,7 +322,7 @@ import {
   getNoteLinkFromEventTarget,
   getNoteLinkHintPosition,
   getResourceFilesFromDataTransfer,
-  shouldInsertDroppedResourceFiles,
+  handleResourceFileDrop,
   isCreatedMemoEditorFocused,
   isEditorReady,
   releaseEditorMedia,
@@ -508,6 +511,7 @@ const RichEditorPane = ({
   }, [memo?.id]);
   const [editorStateVersion, setEditorStateVersion] = useState(0);
   const [editorContentVersion, setEditorContentVersion] = useState(0);
+  const { chooseFailure: chooseImgBedFailure, failureDialog: imgBedFailureDialog } = useBrowserImgBedFailure(`${localDataScope}:${memo?.id ?? ""}`);
   const [imageUploadState, setImageUploadState] = useState<"idle" | "compressing" | "uploading" | "error">("idle");
   const [imagePreview, setImagePreview] = useState<ImagePreviewRequestDetail | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -1063,7 +1067,9 @@ const RichEditorPane = ({
       const external = await uploadImageWithPicGo(uploadFile, {
         title: t(`${failure}.failedTitle`), message: t(`${failure}.failedMessage`),
         retry: t("settings.picgo.retry"), fallback: t("settings.picgo.fallback"), cancel: t("settings.picgo.cancel"),
-      }, { memoId: targetMemoId });
+      }, { memoId: targetMemoId, chooseFailure: chooseImgBedFailure,
+        isActive: () => memoRef.current?.id === targetMemoId && editorInstanceMemoIdentityRef.current.instanceKey === instanceKey,
+      });
       // PicGo or its failure dialog may outlive the original note/instance.
       if (memoRef.current?.id !== targetMemoId || editorInstanceMemoIdentityRef.current.instanceKey !== instanceKey) {
         throw new Error("The active note changed during image upload");
@@ -1100,7 +1106,7 @@ const RichEditorPane = ({
         url: `edgeever-staged://${staged.id}`,
       };
     }
-  }, [repository, t]);
+  }, [repository, t, chooseImgBedFailure]);
 
   const insertResourceFiles = useCallback((files: File[], dropPosition?: number) => {
     const currentMemo = memoRef.current;
@@ -1133,6 +1139,7 @@ const RichEditorPane = ({
 
     void resourceInsertionLimit(async () => {
       let resumeDesktopSync: (() => void) | null = null;
+      let stopTrackingInsertion: (() => void) | undefined;
       try {
         // A new desktop note can receive its durable ID while a file is being
         // staged. Keep the note ID and staged resource together until the
@@ -1147,9 +1154,13 @@ const RichEditorPane = ({
 
         // Read the selection only after earlier resource insertions complete.
         // Rapid consecutive pastes otherwise race with the same stale cursor.
-        const insertionTarget = dropPosition ?? getResourceInsertionTarget(insertionEditor.state.selection);
+        let insertionTarget = dropPosition ?? getResourceInsertionTarget(insertionEditor.state.selection);
+        const trackInsertion: Parameters<typeof insertionEditor.on<"transaction">>[1] = ({ transaction }) => {
+          insertionTarget = mapResourceInsertionTarget(insertionTarget, transaction.mapping);
+        };
+        insertionEditor.on("transaction", trackInsertion);
+        stopTrackingInsertion = () => insertionEditor.off("transaction", trackInsertion);
         setImageUploadState("uploading");
-        const imageReadiness: Promise<void>[] = [];
 
         const results = await processFileUploadBatch(files, async (file) => {
           const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(resolveResourceUploadMimeType(file.name, file.type));
@@ -1171,9 +1182,6 @@ const RichEditorPane = ({
           if (placeholder) updateImageUploadPlaceholder(editorRef.current, placeholder,
             t("editor.uploadState.uploading"));
           const resource = await uploadEditorResource(targetMemoId, uploadFile, isImage);
-          if (resource.kind === "image") {
-            imageReadiness.push(waitForImageSourceReady(resource.url));
-          }
           return resource;
         });
 
@@ -1181,7 +1189,6 @@ const RichEditorPane = ({
         if (successfulResults.length > 0) {
           void queryClient.invalidateQueries({ queryKey: ["resources"] });
         }
-        await Promise.all(imageReadiness);
 
         const activeEditor = editorRef.current;
         const activeMemoId = resolveTargetMemoId();
@@ -1192,6 +1199,7 @@ const RichEditorPane = ({
         const content = successfulResults.map(({ file, value: resource }) => {
           const filename = resource.filename || file.name;
           if (resource.kind === "image") {
+            registerImageUploadPreview(activeEditor, resource.url, file);
             return {
               type: "image",
               attrs: {
@@ -1287,11 +1295,13 @@ const RichEditorPane = ({
         console.error("[editor] Attachment insertion failed", error);
         setImageUploadState("error");
       } finally {
+        stopTrackingInsertion?.();
         resumeDesktopSync?.();
         const placeholderEditor = editorRef.current;
         placeholders.forEach((placeholder) => {
           removeImageUploadPlaceholder(placeholderEditor, placeholder);
         });
+        if (isEditorReady(placeholderEditor)) pruneImageUploadPreviews(placeholderEditor, placeholderEditor.state.doc);
       }
     });
     return true;
@@ -1476,23 +1486,7 @@ const RichEditorPane = ({
         insertResourceFiles(files);
         return true;
       },
-      handleDrop: (view, event) => {
-        if (!shouldInsertDroppedResourceFiles({
-          dataTransfer: event.dataTransfer,
-          isInternalNodeDrag: Boolean(view.dragging),
-        })) {
-          return false;
-        }
-
-        event.preventDefault();
-        // Use the same coordinate lookup as ProseMirror's external drop cursor.
-        // A drop inserts at a point; it must never replace the old text selection.
-        const dropPosition = view.posAtCoords({ left: event.clientX, top: event.clientY });
-        if (dropPosition) {
-          insertResourceFiles(getResourceFilesFromDataTransfer(event.dataTransfer), dropPosition.pos);
-        }
-        return true;
-      },
+      handleDrop: (view, event) => handleResourceFileDrop(view, event, insertResourceFiles),
     },
   }, [
     // Keep one TipTap view for the pane lifetime. A newly created memo already
@@ -3069,6 +3063,7 @@ const RichEditorPane = ({
     setShareOpen,
     shareOpen,
     wechatCopyState,
+    wechatCopyError,
   } = useEditorDocumentActions({
     canShareMemo: Boolean(memo && !readOnly),
     documentActionRequest,
@@ -4462,7 +4457,7 @@ const RichEditorPane = ({
               desktopFocusMode={desktopFocusMode}
               onToggleDesktopFocusMode={onToggleDesktopFocusMode}
             />
-            {!readOnly && (!mobileEditingActive || isMemoShared) && (
+            {!readOnly && editorColumnWidth >= 960 && (!mobileEditingActive || isMemoShared) && (
               <IconTooltip label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}>
                 <Button
                   className="h-8 w-8 text-slate-500"
@@ -4547,22 +4542,28 @@ const RichEditorPane = ({
                       {phonePreviewOpen ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem
-                    className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                    disabled={!editor || useMobilePlainTextEditor || wechatCopyState === "copying"}
-                    onClick={() => void handleCopyToWeChat()}
+                  <IconTooltip
+                    side="left"
+                    contentClassName="z-[110] max-w-xs whitespace-normal"
+                    label={t("editor.copyToWeChatTooltip")}
                   >
-                    {wechatCopyState === "copying" ? (
-                      <LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />
-                    ) : wechatCopyState === "copied" ? (
-                      <Check className="h-4 w-4 text-slate-500" />
-                    ) : wechatCopyState === "error" ? (
-                      <CircleAlert className="h-4 w-4 text-rose-600" />
-                    ) : (
-                      <WeChatIcon className="h-4 w-4 text-slate-500" />
-                    )}
-                    {t(wechatCopyState === "copying" ? "editor.copyingToWeChat" : wechatCopyState === "copied" ? "editor.copiedToWeChat" : wechatCopyState === "error" ? "editor.copyToWeChatFailed" : "editor.copyToWeChat")}
-                  </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                      disabled={!editor || useMobilePlainTextEditor || wechatCopyState === "copying"}
+                      onClick={() => void handleCopyToWeChat()}
+                    >
+                      {wechatCopyState === "copying" ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />
+                      ) : wechatCopyState === "copied" ? (
+                        <Check className="h-4 w-4 text-slate-500" />
+                      ) : wechatCopyState === "error" ? (
+                        <CircleAlert className="h-4 w-4 text-rose-600" />
+                      ) : (
+                        <ClipboardType className="h-4 w-4 text-slate-500" />
+                      )}
+                      {t(wechatCopyState === "copying" ? "editor.copyingToWeChat" : wechatCopyState === "copied" ? "editor.copiedToWeChat" : wechatCopyState === "error" ? "editor.copyToWeChatFailed" : "editor.copyToWeChat")}
+                    </DropdownMenuItem>
+                  </IconTooltip>
                 </>
               )}
               moreMenuItems={(
@@ -4761,6 +4762,20 @@ const RichEditorPane = ({
       <div className="relative min-h-0 min-w-0 flex-1">
       <div
         ref={setEditorScrollContainerRef}
+        onDragOver={(event) => {
+          if (useMobilePlainTextEditor || useMarkdownSourceEditor || effectiveReadOnly ||
+            !isEditorReady(editor) || !editor.isEditable || editor.view.dragging ||
+            !Array.from(event.dataTransfer.types).includes("Files")) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }}
+        onDrop={(event) => {
+          if (useMobilePlainTextEditor || useMarkdownSourceEditor || effectiveReadOnly ||
+            !isEditorReady(editor)) return;
+          // Bubble phase preserves node handlers; a handled drop is ignored by
+          // the shared helper so each file is inserted only once.
+          handleResourceFileDrop(editor.view, event.nativeEvent, insertResourceFiles);
+        }}
         data-editor-theme="default"
         data-note-palette={noteProse.palette}
         data-note-heading-style={noteProseStyle.headingStyle}
@@ -4768,8 +4783,10 @@ const RichEditorPane = ({
         data-note-emphasis-style={noteProseStyle.emphasisStyle}
         data-note-magazine-cover={showMagazineCover ? "true" : "false"}
         data-note-chapter-navigation={showChapterNavigation ? "true" : "false"}
+        data-note-tags={JSON.stringify(parseTagsText(tagsText))}
         data-note-title={title || getEditableMemoTitle(memo?.title)}
         style={{
+          ...noteCoverTagCssVariables(parseTagsText(tagsText)),
           ...noteProseCssVariables(noteProse),
           ...noteProseStyleCssVariables(noteProseStyle),
           "--memo-content-divider-spacing": `${MEMO_CONTENT_STYLE.divider.marginVertical}px`,
@@ -4793,6 +4810,9 @@ const RichEditorPane = ({
             />
           ) : null}
         <div
+          onPointerDownCapture={() => { editorCanvasInteractionVersionRef.current += 1; }}
+          onKeyDownCapture={() => { editorCanvasInteractionVersionRef.current += 1; }}
+          onBeforeInputCapture={() => { editorCanvasInteractionVersionRef.current += 1; }}
           onClickCapture={
             !useMobilePlainTextEditor && !useMarkdownSourceEditor
               ? handleEditorClickCapture
@@ -4935,8 +4955,7 @@ const RichEditorPane = ({
                     showMagazineCover={showMagazineCover}
                     showChapterNavigation={showChapterNavigation}
                     title={title || getEditableMemoTitle(memo?.title)}
-                    tags={memo?.tags}
-                    notebookName={notebookName}
+                    tags={parseTagsText(tagsText)}
                     updatedAt={memo?.updatedAt}
                     palette={noteProse.palette}
                   />
@@ -4952,7 +4971,8 @@ const RichEditorPane = ({
           {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && phonePreviewOpen && (
             <EditorPhonePreview
               editor={editor}
-              title={getEditableMemoTitle(memo?.title)}
+              title={title || getEditableMemoTitle(memo?.title)}
+              tagsKey={tagsText}
               showMagazineCover={showMagazineCover}
               showChapterNavigation={showChapterNavigation}
               scrollContainer={editorScrollContainer}
@@ -5065,7 +5085,7 @@ const RichEditorPane = ({
 
       {(wechatCopyState === "copied" || wechatCopyState === "error") && (
         <ClipboardCopyNotice status={wechatCopyState === "copied" ? "copied" : "error"}>
-          {t(wechatCopyState === "copied" ? "editor.copiedToWeChat" : "editor.copyToWeChatFailed")}
+          {wechatCopyState === "error" && wechatCopyError ? wechatCopyError : t(wechatCopyState === "copied" ? "editor.copiedToWeChatNotice" : "editor.copyToWeChatFailed")}
         </ClipboardCopyNotice>
       )}
 
@@ -5137,6 +5157,7 @@ const RichEditorPane = ({
         />
       )}
 
+      {imgBedFailureDialog}
       <ShareMemoDialog memoId={memo.id} open={shareOpen} onOpenChange={setShareOpen} />
 
       {imageShareSource && (
